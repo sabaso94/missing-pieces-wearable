@@ -11,6 +11,7 @@ from .activity import SUMMARY_NAMES
 from .data import BLOCKS, REMOVABLE
 
 ACTIVITY_COLUMNS: list[str] = [f"act_{name}" for name in SUMMARY_NAMES]
+CLIP_SD = 5.0
 
 
 def tab_variables(blocks: list[str], with_activity: bool = False) -> list[str]:
@@ -32,8 +33,12 @@ def fit_tab_stats(df: pd.DataFrame, variables: list[str]) -> dict[str, tuple[flo
 
 def make_tab_features(df: pd.DataFrame, stats: dict[str, tuple[float, float]],
                       variables: list[str]) -> tuple[np.ndarray, list[str]]:
-    """(N, 2V) float32: standardised values with missing set to 0 (the training mean), then 0/1 indicators."""
+    """(N, 2V) float32: standardised values with missing set to 0 (the training mean), then 0/1 indicators.
+
+    Standardised values are clipped at +-5 SD so that a few extreme lab values cannot dominate a linear model.
+    """
     values = np.column_stack([(df[v].to_numpy(dtype=float) - stats[v][0]) / stats[v][1] for v in variables])
+    values = np.clip(values, -CLIP_SD, CLIP_SD)
     missing = np.isnan(values)
     x = np.concatenate([np.where(missing, 0.0, values), missing.astype(float)], axis=1).astype(np.float32)
     return x, variables + [f"{v}_missing" for v in variables]

@@ -47,3 +47,18 @@ def test_cox_fit_part_only():
     X2.iloc[400:] = 99.0
     after = fit_cox(X2.iloc[fit], time[fit], died[fit]).fitter.params_
     pd.testing.assert_series_equal(before, after)
+
+
+def test_rare_indicators_do_not_break_fit():
+    # Several rare 0/1 columns, each set for a handful of people who all survive (near-separation), as with
+    # NHANES missing indicators. The fit must still rank by the real signal.
+    X, time, died = synthetic(n=3000, seed=1)
+    rng = np.random.default_rng(2)
+    alive = np.flatnonzero(died == 0)
+    for j in range(6):
+        X[f"rare{j}"] = 0.0
+        X.loc[rng.choice(alive, 4, replace=False), f"rare{j}"] = 1.0
+    model = fit_cox(X, time, died)
+    from nhanes_reliable.metrics import c_index
+    assert c_index(time, died, cox_risk(model, X)) > 0.65
+    assert model.fitter.params_.abs().max() < 3

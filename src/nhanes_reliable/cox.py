@@ -28,8 +28,11 @@ def cox_design(cohort: pd.DataFrame, blocks: list[str], stats: dict[str, tuple[f
     return pd.DataFrame(x, columns=names, index=cohort.index)
 
 
-def fit_cox(X: pd.DataFrame, time: np.ndarray, died: np.ndarray, penalizer: float = 0.01) -> CoxModel:
+def fit_cox(X: pd.DataFrame, time: np.ndarray, died: np.ndarray, penalizer: float = 0.1) -> CoxModel:
     """Fit a ridge-penalised Cox model.
+
+    The penalty keeps coefficients finite when a rare 0/1 column (e.g. a missing indicator set for a few
+    survivors only) nearly separates deaths from survivors; a weaker penalty (0.01) let the fit diverge.
 
     Columns that are constant in the fitting data, or exact copies of an earlier column, carry no information
     and are dropped. (All activity summaries are missing together, so their indicators are identical.)

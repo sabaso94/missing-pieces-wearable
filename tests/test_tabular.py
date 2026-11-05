@@ -87,3 +87,10 @@ def test_block_flags_removed_forced_off():
     assert flags[1, REMOVABLE.index("labs")] == 0 and flags[0].sum() == 4
     flags = block_flags(df, removed=["wearable"])
     assert (flags[:, 0] == 0).all() and (flags[:, 2] == 1).all()
+
+
+def test_features_clipped_at_five_sd():
+    df = frame()
+    df.loc[2, "albumin"] = 1e6
+    x, names = make_tab_features(df, fit_tab_stats(df.iloc[3:], ["albumin"]), ["albumin"])
+    assert x[2, 0] == 5.0 and np.abs(x[:, 0]).max() <= 5.0
