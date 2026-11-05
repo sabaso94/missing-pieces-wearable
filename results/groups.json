@@ -1,0 +1,17 @@
+{
+  "age_band": {
+    "20-49": "20-49",
+    "50-64": "50-64",
+    "65+": "65+"
+  },
+  "race": {
+    "NH White": "NH White",
+    "NH Black": "NH Black",
+    "Hispanic": "Hispanic",
+    "NH Asian/other": "NH Asian/other"
+  },
+  "sex": {
+    "male": "male",
+    "female": "female"
+  }
+}

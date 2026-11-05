@@ -46,6 +46,21 @@ def prepare(data_dir: Path) -> tuple[pd.DataFrame, DayData]:
     return cohort, days
 
 
+def fold_splits(cohort: pd.DataFrame, folds: pd.Series, train_on: str = "all"):
+    """Yield (fold, test rows, fit rows, hold rows) as positions in `cohort`, the same for every script."""
+    if train_on not in ("all", "complete"):
+        raise ValueError(f"train_on must be 'all' or 'complete', got {train_on!r}")
+    fold_of = folds.loc[cohort.index].to_numpy()
+    died = cohort["died"].to_numpy()
+    complete = cohort["complete_case"].to_numpy()
+    for k in np.unique(fold_of):
+        test = np.flatnonzero(fold_of == k)
+        fit, hold = inner_split(np.flatnonzero(fold_of != k), died, fold=int(k))
+        if train_on == "complete":
+            fit, hold = fit[complete[fit]], hold[complete[hold]]
+        yield int(k), test, fit, hold
+
+
 def _cox_fold(model: str, cohort: pd.DataFrame, fit: np.ndarray, conditions: dict[str, list[str]],
               rows: np.ndarray) -> dict[str, np.ndarray]:
     """Risk for `rows` under each condition from Cox model(s) fitted on `fit`.
@@ -76,17 +91,8 @@ def crossfit(model: str, cohort: pd.DataFrame, days: DayData | None, folds: pd.S
 
     train_on="complete" fits only on complete cases (used for the naive deep model and the per-subset Cox).
     """
-    if train_on not in ("all", "complete"):
-        raise ValueError(f"train_on must be 'all' or 'complete', got {train_on!r}")
-    fold_of = folds.loc[cohort.index].to_numpy()
-    died = cohort["died"].to_numpy()
-    complete = cohort["complete_case"].to_numpy()
     records = []
-    for k in np.unique(fold_of):
-        test = np.flatnonzero(fold_of == k)
-        fit, hold = inner_split(np.flatnonzero(fold_of != k), died, fold=int(k))
-        if train_on == "complete":
-            fit, hold = fit[complete[fit]], hold[complete[hold]]
+    for k, test, fit, hold in fold_splits(cohort, folds, train_on):
         rows = np.r_[test, hold]
         if model in DEEP_MODELS:
             inputs = build_fold_inputs(cohort, days, fit, model)
