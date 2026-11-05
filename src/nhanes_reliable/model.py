@@ -58,13 +58,11 @@ class FusionSurvivalNet(nn.Module):
             present = flags[:, 0] * day_mask.any(dim=1).float()
             flags = torch.cat([present[:, None], flags[:, 1:]], dim=1)
             mask = day_mask & (present[:, None] > 0)
-            embedding = torch.zeros(len(tab), self.emb_dim, device=tab.device)
+            per_day = torch.zeros(*mask.shape, self.emb_dim, device=tab.device)
             if mask.any():
-                # Encode only the valid days, then average them per person.
-                encoded = self.days(days[mask])
-                people = mask.nonzero()[:, 0]
-                embedding = embedding.index_add(0, people, encoded)
-                embedding = embedding / mask.sum(dim=1).clamp(min=1)[:, None].float()
+                # Encode only the valid days, put them back in their slots, then average per person.
+                per_day[mask] = self.days(days[mask])
+            embedding = per_day.sum(dim=1) / mask.sum(dim=1).clamp(min=1)[:, None].float()
             parts.append(embedding)
         parts.append(flags)
         return self.head(torch.cat(parts, dim=1))
