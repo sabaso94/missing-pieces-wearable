@@ -1,0 +1,115 @@
+contrast,approach,condition,metric,diff,lo,hi
+fused_naive no_wearable - fused_naive none,fused_naive,no_wearable,c_index,-0.014707938130699594,-0.019541389373424624,-0.010112690369566604
+fused_naive no_wearable - fused_naive none,fused_naive,no_wearable,brier5,0.07384638467163565,0.06927779529131971,0.07825436292303962
+fused_naive no_wearable - fused_naive none,fused_naive,no_wearable,citl5,0.2027607593848253,0.19897536325952925,0.20667513446659921
+fused_naive no_labs - fused_naive none,fused_naive,no_labs,c_index,-0.006820587618560747,-0.011756321396263453,-0.0019631375484239744
+fused_naive no_labs - fused_naive none,fused_naive,no_labs,brier5,0.00125985126104778,0.0005537267295227347,0.0019681366734027976
+fused_naive no_labs - fused_naive none,fused_naive,no_labs,citl5,-0.007939373767305663,-0.0087641467915631,-0.00717886672962555
+fused_naive no_exam - fused_naive none,fused_naive,no_exam,c_index,-0.008567577650317348,-0.013578638450947186,-0.003262697930578562
+fused_naive no_exam - fused_naive none,fused_naive,no_exam,brier5,0.002134681012416463,0.0015509793411273283,0.0027410056394478895
+fused_naive no_exam - fused_naive none,fused_naive,no_exam,citl5,0.020943671155895877,0.02012724711748265,0.021737254124263087
+fused_naive no_questionnaire - fused_naive none,fused_naive,no_questionnaire,c_index,-0.05389436878879561,-0.06567499222045264,-0.042475661152953585
+fused_naive no_questionnaire - fused_naive none,fused_naive,no_questionnaire,brier5,0.006464593659837516,0.004826633488479518,0.008059603371083033
+fused_naive no_questionnaire - fused_naive none,fused_naive,no_questionnaire,citl5,-0.03124663921045638,-0.03263329320567277,-0.029711501612575793
+fused_naive no_clinic - fused_naive none,fused_naive,no_clinic,c_index,-0.013168111052817233,-0.020613537814533907,-0.005466430404463765
+fused_naive no_clinic - fused_naive none,fused_naive,no_clinic,brier5,0.0022235531491860347,0.0014047407764051928,0.0030258495736784543
+fused_naive no_clinic - fused_naive none,fused_naive,no_clinic,citl5,0.007844942169239776,0.006839256587101567,0.008934009883191
+fused_naive questionnaire_only - fused_naive none,fused_naive,questionnaire_only,c_index,-0.04352243128463762,-0.05446100732276319,-0.03239035278329984
+fused_naive questionnaire_only - fused_naive none,fused_naive,questionnaire_only,brier5,0.10272134401227695,0.09816520426877748,0.10706591633318985
+fused_naive questionnaire_only - fused_naive none,fused_naive,questionnaire_only,citl5,0.2731840824298932,0.2693737089282221,0.2769786950264028
+fused - fused_naive (none),fused,none,c_index,0.0023659525158929995,-0.001197558166548046,0.005862666939515133
+fused - fused_naive (none),fused,none,brier5,-4.738873782807185e-06,-0.0005633525597234514,0.0005605537569685445
+fused - fused_naive (none),fused,none,citl5,-0.003927139475113375,-0.004583200468388616,-0.0032670479505136404
+fused - cox_subset (none),fused,none,c_index,0.0013979288757367536,-0.004571393832491455,0.006909044961204799
+fused - cox_subset (none),fused,none,brier5,-0.0009008075643027677,-0.001942016626639965,3.412942568850519e-05
+fused - cox_subset (none),fused,none,citl5,-0.011635317728045491,-0.012751566228868768,-0.01047369622799992
+fused no_wearable - fused none,fused,no_wearable,c_index,-0.009775396620212207,-0.01326145657282687,-0.006440061956420996
+fused no_wearable - fused none,fused,no_wearable,brier5,0.0014345766147307107,0.0007681768121959385,0.002109358391078867
+fused no_wearable - fused none,fused,no_wearable,citl5,0.011942272932396233,0.011138159048419636,0.012732452722556038
+fused - fused_naive (no_wearable),fused,no_wearable,c_index,0.007298494026380387,0.0029944385108001017,0.011492158036652902
+fused - fused_naive (no_wearable),fused,no_wearable,brier5,-0.07241654693068775,-0.0766967827432435,-0.06804333430868331
+fused - fused_naive (no_wearable),fused,no_wearable,citl5,-0.1947456259275424,-0.19831406005749863,-0.19097877246453748
+fused - cox_subset (no_wearable),fused,no_wearable,c_index,-0.004891066813421219,-0.010767547744222863,0.0009670068237522866
+fused - cox_subset (no_wearable),fused,no_wearable,brier5,-0.0005014700415392759,-0.0017544108892427843,0.0006775435003518399
+fused - cox_subset (no_wearable),fused,no_wearable,citl5,0.00010168028655083844,-0.0011910404672045522,0.0015837309516456186
+fused no_labs - fused none,fused,no_labs,c_index,-0.00015431955811973097,-0.003721502418756434,0.0040227355298405165
+fused no_labs - fused none,fused,no_labs,brier5,0.00029761173634731963,-0.00036891791157941684,0.0008768351857403604
+fused no_labs - fused none,fused,no_labs,citl5,0.0008618204052694492,0.0001295864986130024,0.0015647719978342744
+fused - fused_naive (no_labs),fused,no_labs,c_index,0.009032220576334016,0.004448833134919275,0.013624547627766792
+fused - fused_naive (no_labs),fused,no_labs,brier5,-0.0009669783984832675,-0.0017166978174101334,-0.00025673222799502186
+fused - fused_naive (no_labs),fused,no_labs,citl5,0.004874054697461737,0.004066548537012795,0.0056794866965265665
+fused - cox_subset (no_labs),fused,no_labs,c_index,0.004413160405601468,-0.0014560197158542674,0.009902290712866775
+fused - cox_subset (no_labs),fused,no_labs,brier5,-0.001200557428968664,-0.0021369852821708736,-0.000364585217634441
+fused - cox_subset (no_labs),fused,no_labs,citl5,-0.010459288957931558,-0.011423683200219917,-0.009378743771280961
+fused no_exam - fused none,fused,no_exam,c_index,-0.002841964140597897,-0.006385545021864336,0.0008760230963704036
+fused no_exam - fused none,fused,no_exam,brier5,0.001061521866077414,0.000582104073176518,0.0016045892595779596
+fused no_exam - fused none,fused,no_exam,citl5,0.0031327673741981324,0.0025227207274628027,0.0037232350638804258
+fused - fused_naive (no_exam),fused,no_exam,c_index,0.008091566025612451,0.0035334603880826988,0.012510936524098045
+fused - fused_naive (no_exam),fused,no_exam,brier5,-0.0010778980201218563,-0.001762948408991757,-0.00033947391616543596
+fused - fused_naive (no_exam),fused,no_exam,citl5,-0.02173804325681112,-0.022626467205562835,-0.020887224600417524
+fused - cox_subset (no_exam),fused,no_exam,c_index,0.004404739147313985,-0.001894147400130619,0.010048535420390723
+fused - cox_subset (no_exam),fused,no_exam,brier5,-0.0009533639815431233,-0.0018297940476243546,-3.825005266203315e-05
+fused - cox_subset (no_exam),fused,no_exam,citl5,-0.008403544657666344,-0.009395169031879817,-0.007385324316378059
+fused no_questionnaire - fused none,fused,no_questionnaire,c_index,-0.007373653756596932,-0.012451368198505794,-0.0023252791680799224
+fused no_questionnaire - fused none,fused,no_questionnaire,brier5,0.00014921868851718728,-0.0006241486319277263,0.0009115535640905787
+fused no_questionnaire - fused none,fused,no_questionnaire,citl5,-0.0010336488549141584,-0.001870411823914745,-0.00019595548125629224
+fused - fused_naive (no_questionnaire),fused,no_questionnaire,c_index,0.04888666754809168,0.03755979765349344,0.060045821859661334
+fused - fused_naive (no_questionnaire),fused,no_questionnaire,brier5,-0.0063201138451031355,-0.007886161136180044,-0.004778516005429333
+fused - fused_naive (no_questionnaire),fused,no_questionnaire,citl5,0.026285850880428847,0.02485980481175527,0.02782154733814901
+fused - cox_subset (no_questionnaire),fused,no_questionnaire,c_index,0.002798805191874143,-0.002967352256176381,0.008350292926314316
+fused - cox_subset (no_questionnaire),fused,no_questionnaire,brier5,-0.0012369023121371059,-0.002091417154023711,-0.0003803750045502653
+fused - cox_subset (no_questionnaire),fused,no_questionnaire,citl5,-0.012700970329991554,-0.013717636701548087,-0.011649680741488824
+fused no_clinic - fused none,fused,no_clinic,c_index,-0.0023480573420319173,-0.007591430159816196,0.002954759415408599
+fused no_clinic - fused none,fused,no_clinic,brier5,0.001598058473039926,0.0008093398297824232,0.002469702673518247
+fused no_clinic - fused none,fused,no_clinic,citl5,0.005253805839660737,0.0042875676032568906,0.006216266752138013
+fused - fused_naive (no_clinic),fused,no_clinic,c_index,0.013186006226678315,0.007426853317164769,0.018861173301086057
+fused - fused_naive (no_clinic),fused,no_clinic,brier5,-0.0006302335499289158,-0.001276396128318904,-2.7536565783950444e-05
+fused - fused_naive (no_clinic),fused,no_clinic,citl5,-0.006518275804692414,-0.007320042883964431,-0.005662842108527178
+fused - cox_subset (no_clinic),fused,no_clinic,c_index,0.008642105786162313,0.002222925312247037,0.014423900003620538
+fused - cox_subset (no_clinic),fused,no_clinic,brier5,-0.00118927771806885,-0.0020321687542584404,-0.00040156126009053807
+fused - cox_subset (no_clinic),fused,no_clinic,citl5,-0.00599052750553096,-0.0069573718973371815,-0.005043901968736528
+fused questionnaire_only - fused none,fused,questionnaire_only,c_index,-0.01579017508638103,-0.022740655109567777,-0.00887904954417366
+fused questionnaire_only - fused none,fused,questionnaire_only,brier5,0.004148516363894843,0.0029414911208112708,0.005321837185152162
+fused questionnaire_only - fused none,fused,questionnaire_only,citl5,0.023970269520107168,0.022533779325257696,0.02546406759515442
+fused - fused_naive (questionnaire_only),fused,questionnaire_only,c_index,0.030098208714149588,0.022949071764596783,0.037710800570753
+fused - fused_naive (questionnaire_only),fused,questionnaire_only,brier5,-0.0985775665221649,-0.10270270290608788,-0.09434109095701679
+fused - fused_naive (questionnaire_only),fused,questionnaire_only,citl5,-0.2531409523848994,-0.25626380073271615,-0.24992209397278065
+fused - cox_subset (questionnaire_only),fused,questionnaire_only,c_index,0.005965829902372377,0.000609369087757286,0.010986004128068421
+fused - cox_subset (questionnaire_only),fused,questionnaire_only,brier5,-0.00042645242753339835,-0.001629043471924594,0.0007202426016600689
+fused - cox_subset (questionnaire_only),fused,questionnaire_only,citl5,0.012443828839981366,0.011145394593396566,0.013742672103299249
+cox_subset no_wearable - cox_subset none,cox_subset,no_wearable,c_index,-0.0034864009310542343,-0.008819381438033435,0.0016734857933389095
+cox_subset no_wearable - cox_subset none,cox_subset,no_wearable,brier5,0.0010352390919672189,0.00041125405063341164,0.0017087531277005443
+cox_subset no_wearable - cox_subset none,cox_subset,no_wearable,citl5,0.00020527491779990387,-0.0005405871800784699,0.0008891533386599175
+cox_subset no_labs - cox_subset none,cox_subset,no_labs,c_index,-0.0031695510879844457,-0.00641950356309198,0.00024069736670939365
+cox_subset no_labs - cox_subset none,cox_subset,no_labs,brier5,0.000597361601013216,0.00010352928554903437,0.0010860757677584418
+cox_subset no_labs - cox_subset none,cox_subset,no_labs,citl5,-0.00031420836484448433,-0.0008547890870869657,0.00016875870284046473
+cox_subset no_exam - cox_subset none,cox_subset,no_exam,c_index,-0.005848774412175128,-0.008920181307548122,-0.002546531618380405
+cox_subset no_exam - cox_subset none,cox_subset,no_exam,brier5,0.0011140782833177695,0.0005502124894445569,0.001720835942317003
+cox_subset no_exam - cox_subset none,cox_subset,no_exam,citl5,-9.900569618101485e-05,-0.000724196003750614,0.000492874272935884
+cox_subset no_questionnaire - cox_subset none,cox_subset,no_questionnaire,c_index,-0.008774530072734321,-0.013283328997521637,-0.004403847438400062
+cox_subset no_questionnaire - cox_subset none,cox_subset,no_questionnaire,brier5,0.00048531343635152546,-0.00028588869519875906,0.0012768433453389278
+cox_subset no_questionnaire - cox_subset none,cox_subset,no_questionnaire,citl5,3.2003747031904284e-05,-0.0006963204983918973,0.0007715948079865725
+cox_subset no_clinic - cox_subset none,cox_subset,no_clinic,c_index,-0.009592234252457477,-0.013958515561438688,-0.004897920444099887
+cox_subset no_clinic - cox_subset none,cox_subset,no_clinic,brier5,0.0018865286268060083,0.0011532104631166201,0.002695599969039649
+cox_subset no_clinic - cox_subset none,cox_subset,no_clinic,citl5,-0.0003909843828537943,-0.0012299996508298877,0.00040529679226524265
+cox_subset questionnaire_only - cox_subset none,cox_subset,questionnaire_only,c_index,-0.020358076113016654,-0.0289312461567844,-0.012221590072287548
+cox_subset questionnaire_only - cox_subset none,cox_subset,questionnaire_only,brier5,0.0036741612271254734,0.002504394225435666,0.004927639697223926
+cox_subset questionnaire_only - cox_subset none,cox_subset,questionnaire_only,citl5,-0.00010887704791968933,-0.0013949761134744712,0.0011492888883304683
+cox_impute no_wearable - cox_impute none,cox_impute,no_wearable,c_index,-0.00562140043841064,-0.01039155159448547,-0.0009036848964622066
+cox_impute no_wearable - cox_impute none,cox_impute,no_wearable,brier5,0.002001964788272491,0.0012126356935364007,0.002861814363436045
+cox_impute no_wearable - cox_impute none,cox_impute,no_wearable,citl5,-0.004012235739481805,-0.0049108753943033455,-0.0031861392542789084
+cox_impute no_labs - cox_impute none,cox_impute,no_labs,c_index,-0.004795696063314314,-0.008126407098372446,-0.0014002093049696022
+cox_impute no_labs - cox_impute none,cox_impute,no_labs,brier5,0.0008450132388509446,0.00022608531593403816,0.0014871672272665042
+cox_impute no_labs - cox_impute none,cox_impute,no_labs,citl5,0.020537972095965654,0.019883225868676226,0.021144506556710338
+cox_impute no_exam - cox_impute none,cox_impute,no_exam,c_index,-0.007182280662011986,-0.011069155982552282,-0.0031339017724374453
+cox_impute no_exam - cox_impute none,cox_impute,no_exam,brier5,0.008791167197656331,0.007272914947575711,0.010269401662879507
+cox_impute no_exam - cox_impute none,cox_impute,no_exam,citl5,0.0734594891442932,0.07211589206091314,0.0747679298145274
+cox_impute no_questionnaire - cox_impute none,cox_impute,no_questionnaire,c_index,-0.17151724126315504,-0.18960000822074313,-0.1543287968061737
+cox_impute no_questionnaire - cox_impute none,cox_impute,no_questionnaire,brier5,0.13190517625128212,0.1259633555634985,0.1378661945294645
+cox_impute no_questionnaire - cox_impute none,cox_impute,no_questionnaire,citl5,0.2310082438459538,0.22489931388781775,0.2367008122768791
+cox_impute no_clinic - cox_impute none,cox_impute,no_clinic,c_index,-0.015955758077460414,-0.02147304697703585,-0.01052874615114743
+cox_impute no_clinic - cox_impute none,cox_impute,no_clinic,brier5,0.021619758205334932,0.019627163070070237,0.02378551217560108
+cox_impute no_clinic - cox_impute none,cox_impute,no_clinic,citl5,0.12256728987449694,0.120641462450554,0.12431944299218631
+cox_impute questionnaire_only - cox_impute none,cox_impute,questionnaire_only,c_index,-0.033209547854221255,-0.042028453592738275,-0.024966783483297977
+cox_impute questionnaire_only - cox_impute none,cox_impute,questionnaire_only,brier5,0.02264184467091411,0.020970040136890026,0.02437729549761445
+cox_impute questionnaire_only - cox_impute none,cox_impute,questionnaire_only,citl5,0.12754102653886923,0.12587476769259806,0.1291947359313572
