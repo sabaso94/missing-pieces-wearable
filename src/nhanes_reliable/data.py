@@ -51,6 +51,9 @@ def clean_clinical(raw: pd.DataFrame, cycle: str) -> pd.DataFrame:
     """Turn raw NHANES columns (one row per SEQN) into the model variables of BLOCKS plus race and cycle."""
     out = pd.DataFrame(index=pd.Index(raw["SEQN"].astype(int), name="seqn"))
     raw = raw.set_index(out.index)
+    # pandas reads an XPT zero as 5.4e-79; make it an exact 0 so zero codes are recognised.
+    numeric = raw.select_dtypes("number").columns
+    raw[numeric] = raw[numeric].mask(raw[numeric].abs() < 1e-70, 0.0)
 
     out["age"] = raw["RIDAGEYR"].astype(float)  # NHANES top-codes age at 80
     out["age_raw"] = out["age"]

@@ -6,7 +6,8 @@ predictions (complete cases), and apply it to the same fold's out-of-fold predic
 - fused_recal_global:     one recalibration for everyone
 - fused_recal_<attribute>: one recalibration per group of sex, age band or race (needs the group at use time)
 A gap counts as narrowed only if the CI of its change against fused (same resampled people) excludes zero.
-Writes results/e5_groups.csv, e5_gaps.csv, e5_overall.csv.
+Writes results/e5_groups.csv, e5_gaps.csv, e5_overall.csv, and e5_maps.csv (each fitted map with the number of
+hold-out people and 5-year deaths it rests on).
 """
 
 import argparse
@@ -28,27 +29,39 @@ RESULTS = ROOT / "results"
 METRICS = {"c_index": c_index, "brier5": brier5, "citl5": citl5}
 
 
-def recalibrated(cohort: pd.DataFrame, labels: pd.DataFrame, preds: pd.DataFrame) -> dict[str, pd.Series]:
-    """Out-of-fold risk of every variant, indexed by seqn (complete cases only)."""
+def recalibrated(cohort: pd.DataFrame, labels: pd.DataFrame,
+                 preds: pd.DataFrame) -> tuple[dict[str, pd.Series], pd.DataFrame]:
+    """Out-of-fold risk of every variant, indexed by seqn (complete cases only), and the fitted maps."""
     preds = preds[(preds["condition"] == "none") & preds["seqn"].isin(cohort.index)]
     variants = {name: [] for name in ["fused", "fused_recal_global"] + [f"fused_recal_{a}" for a in REFERENCES]}
-    for _, fold in preds.groupby("fold"):
+    maps = []
+
+    def record(fold_id, attribute, group, t, d, params):
+        maps.append({"fold": fold_id, "attribute": attribute, "group": group, "n_hold": len(t),
+                     "deaths_5y_hold": int(((d == 1) & (t < 5)).sum()), "intercept": params[0], "slope": params[1]})
+
+    for fold_id, fold in preds.groupby("fold"):
         hold = fold[fold["split"] == "hold"].set_index("seqn")
         oof = fold[fold["split"] == "oof"].set_index("seqn")
         t, d = cohort.loc[hold.index, "time_years"].to_numpy(), cohort.loc[hold.index, "died"].to_numpy()
         r_hold, r_oof = hold["risk5"].to_numpy(), oof["risk5"].to_numpy()
         variants["fused"].append(pd.Series(r_oof, index=oof.index))
-        recal = apply_recal(r_oof, fit_recal(t, d, r_hold))
+        params = fit_recal(t, d, r_hold)
+        record(fold_id, "all", "all", t, d, params)
+        recal = apply_recal(r_oof, params)
         # Monotone within one fold: the fold's own ranking is unchanged.
         t_oof, d_oof = cohort.loc[oof.index, "time_years"].to_numpy(), cohort.loc[oof.index, "died"].to_numpy()
         if abs(c_index(t_oof, d_oof, recal) - c_index(t_oof, d_oof, r_oof)) > 1e-4:
             raise AssertionError("global recalibration changed the ranking within a fold")
         variants["fused_recal_global"].append(pd.Series(recal, index=oof.index))
         for attribute in REFERENCES:
-            params = fit_group_recal(t, d, r_hold, labels.loc[hold.index, attribute].to_numpy())
+            hold_groups = labels.loc[hold.index, attribute].to_numpy().astype(str)
+            params = fit_group_recal(t, d, r_hold, hold_groups)
+            for group, p in params.items():
+                record(fold_id, attribute, group, t[hold_groups == group], d[hold_groups == group], p)
             out = apply_group_recal(r_oof, labels.loc[oof.index, attribute].to_numpy(), params)
             variants[f"fused_recal_{attribute}"].append(pd.Series(out, index=oof.index))
-    return {name: pd.concat(parts).loc[cohort.index] for name, parts in variants.items()}
+    return {name: pd.concat(parts).loc[cohort.index] for name, parts in variants.items()}, pd.DataFrame(maps)
 
 
 def main() -> None:
@@ -60,7 +73,8 @@ def main() -> None:
     complete = cohort[cohort["complete_case"]]
     labels = group_labels(complete)
     time, died = complete["time_years"].to_numpy(), complete["died"].to_numpy()
-    risk = {name: s.to_numpy() for name, s in recalibrated(complete, labels, load_preds("fused")).items()}
+    variants, maps = recalibrated(complete, labels, load_preds("fused"))
+    risk = {name: s.to_numpy() for name, s in variants.items()}
 
     tables, gaps, overall = [], [], []
     for name, r in risk.items():
@@ -94,6 +108,7 @@ def main() -> None:
     table.to_csv(RESULTS / "e5_groups.csv", index=False)
     gaps.to_csv(RESULTS / "e5_gaps.csv", index=False)
     overall.to_csv(RESULTS / "e5_overall.csv", index=False)
+    maps.to_csv(RESULTS / "e5_maps.csv", index=False)
     print(gaps.round(4).to_string(index=False))
     print(overall.round(4).to_string(index=False))
 

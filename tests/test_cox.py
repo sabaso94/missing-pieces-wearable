@@ -62,3 +62,15 @@ def test_rare_indicators_do_not_break_fit():
     from nhanes_reliable.metrics import c_index
     assert c_index(time, died, cox_risk(model, X)) > 0.65
     assert model.fitter.params_.abs().max() < 3
+
+
+def test_cox_risk_excludes_deaths_at_horizon():
+    """Risk 'before 5 years' is 1 - S(5-): deaths at exactly 60 months are not counted, between event times
+    the step function is not interpolated."""
+    X, time, died = synthetic()
+    time = np.round(time * 12) / 12  # whole months, as in the linked mortality file
+    time[:40], died[:40] = 5.0, 1  # deaths at exactly 60 months
+    model = fit_cox(X, time, died)
+    survival = model.fitter.predict_survival_function(X.iloc[:3][model.columns])
+    expected = 1 - survival.loc[survival.index < 5].iloc[-1].to_numpy()
+    np.testing.assert_allclose(cox_risk(model, X.iloc[:3]), expected, rtol=1e-10)

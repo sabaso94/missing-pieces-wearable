@@ -54,3 +54,10 @@ def test_subgroup_no_deaths_nan_not_crash():
     assert np.isnan(table.set_index("group").loc["b", "c_index"])
     gap, lo, hi = gap_ci(c_index, time, died, risk, g == "a", g == "b", n_boot=50)
     assert np.isnan(gap)
+
+
+def test_subgroup_table_counts_5y_deaths():
+    time = np.array([1.0, 4.9, 5.0, 7.0, 8.0, 2.0])
+    died = np.array([1, 1, 1, 1, 0, 0])
+    table = subgroup_table(time, died, np.full(6, 0.3), pd.Series(["a"] * 6), n_boot=10).set_index("group")
+    assert table.loc["a", "deaths"] == 4 and table.loc["a", "deaths_5y"] == 2

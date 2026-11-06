@@ -63,7 +63,8 @@ def main() -> None:
     for model in ["fused", "deep_wearable", "cox_full"]:
         for k in KEEP:
             r = risk[model, k][selected]
-            row = {"model": model, "days_kept": k, "n": int(selected.sum()), "deaths": int(d.sum())}
+            row = {"model": model, "days_kept": k, "n": int(selected.sum()), "deaths": int(d.sum()),
+                   "deaths_5y": int(((d == 1) & (t < 5)).sum())}
             for name, metric in METRICS.items():
                 row[name], row[f"{name}_lo"], row[f"{name}_hi"] = bootstrap_ci(metric, t, d, r, args.n_boot)
             rows.append(row)
@@ -84,6 +85,7 @@ def main() -> None:
             r = r_all.loc[people.index].to_numpy()
             t, d = people["time_years"].to_numpy(), people["died"].to_numpy()
             row = {"model": model, "valid_days": label, "n": len(people), "deaths": int(d.sum()),
+                   "deaths_5y": int(((d == 1) & (t < 5)).sum()),
                    "mean_age": float(people["age"].mean())}
             for name in ["c_index", "citl5"]:
                 row[name], row[f"{name}_lo"], row[f"{name}_hi"] = bootstrap_ci(METRICS[name], t, d, r, args.n_boot)

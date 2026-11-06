@@ -115,3 +115,10 @@ def test_real_cohort():
     assert 700 <= cohort["died"].sum() <= 1_400
     assert cohort["time_years"].max() < 10
     assert cohort.index.is_unique
+
+
+def test_xpt_zero_diastolic_is_nan():
+    """pandas reads an XPT zero as 5.4e-79; a diastolic reading of 0 ("not detectable") must still become NaN."""
+    raw = pd.DataFrame([raw_row(SEQN=1, BPXDI2=5.397605346934028e-79)])
+    clean = clean_clinical(raw, cycle="2011-12")
+    assert clean.loc[1, "dbp"] == 80

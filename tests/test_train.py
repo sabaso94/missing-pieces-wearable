@@ -123,3 +123,18 @@ def test_removed_blocks_change_prediction_but_stay_valid():
     full = predict_risk([model], inputs, hold, device="cpu")
     no_labs = predict_risk([model], inputs, hold, removed=["labs"], device="cpu")
     assert ((no_labs > 0) & (no_labs < 1)).all() and not np.allclose(full, no_labs)
+
+
+def test_naive_removed_block_zero_filled_indicators_off():
+    """The naive comparator (spec E2): a removed block is zero-filled with its flag off; its missing indicators
+    stay 0, as the complete-case training data always had them."""
+    cohort, days = synthetic_cohort()
+    inputs = build_fold_inputs(cohort, days, np.arange(200), "fused_naive")
+    tab = torch.from_numpy(inputs.tab[:5]).clone()
+    mask = torch.from_numpy(days.day_mask[30:35]).clone()
+    flags = torch.ones(5, 4)
+    flags[:, REMOVABLE.index("labs")] = 0
+    tab2, _ = apply_flags(tab, mask, flags, inputs)
+    labs = inputs.tab_blocks == "labs"
+    assert (tab2[:, labs] == 0).all()
+    torch.testing.assert_close(tab2[:, ~labs], tab[:, ~labs])

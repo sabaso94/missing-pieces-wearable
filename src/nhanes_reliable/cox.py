@@ -45,6 +45,15 @@ def fit_cox(X: pd.DataFrame, time: np.ndarray, died: np.ndarray, penalizer: floa
 
 
 def cox_risk(model: CoxModel, X: pd.DataFrame, years: float = HORIZON) -> np.ndarray:
-    """Predicted risk of death before `years`: 1 - S(years- | x)."""
-    survival = model.fitter.predict_survival_function(X[model.columns], times=[years - 1e-9])
+    """Predicted risk of death before `years`: 1 - S(years- | x).
+
+    S is a step function that jumps at the event times. lifelines interpolates linearly between them, so it is
+    evaluated at the last event time before `years` (where interpolation is exact); deaths at `years` itself
+    are not counted, as in the binary 5-year outcome.
+    """
+    event_times = model.fitter.baseline_survival_.index.to_numpy()
+    before = event_times[event_times < years]
+    if len(before) == 0:
+        return np.zeros(len(X))
+    survival = model.fitter.predict_survival_function(X[model.columns], times=[before[-1]])
     return 1 - survival.to_numpy()[0]

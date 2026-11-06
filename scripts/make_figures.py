@@ -110,14 +110,14 @@ def e3_days() -> None:
             ax.errorbar(rows["days_kept"] + offset, rows[name], yerr=_err(rows, name), fmt="o-", color=SERIES[k],
                         markersize=5, elinewidth=1.2, capsize=0, label=label)
     ax_cal.axhline(0, color=MUTED, linewidth=1, linestyle=":")
-    n, deaths = int(table["n"].iloc[0]), int(table["deaths"].iloc[0])
+    n, deaths = int(table["n"].iloc[0]), int(table["deaths_5y"].iloc[0])
     ax_c.set(ylabel="Harrell's C (95% CI)", xlabel="valid wear days kept at test time")
     ax_cal.set(ylabel="predicted - observed 5-year risk", xlabel="valid wear days kept at test time")
     ax_c.set_title("Ranking", loc="left")
     ax_cal.set_title("Calibration in the large", loc="left")
     for ax in (ax_c, ax_cal):
         ax.set_xticks(sorted(table["days_kept"].unique()))
-    _title(fig, f"E3: fewer wear days, people with 7 valid days (n={n:,}, {deaths} deaths)")
+    _title(fig, f"E3: fewer wear days, people with 7 valid days (n={n:,}, {deaths} deaths within 5 years)")
     handles, labels = ax_c.get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, -0.02), ncol=len(labels))
     _save(fig, "e3_days.png")
@@ -145,7 +145,7 @@ def e4_e5_calibration() -> None:
         ax.errorbar(xs, y + (1 - k) * 0.22, xerr=[lo, hi], fmt="o", color=SERIES[k], markersize=5, elinewidth=1.5,
                     capsize=0, label=label)
     n = table[table["variant"] == "fused"].set_index(["attribute", "group"])
-    ax.set_yticks(y, [f"{g} (n={n.loc[(a, g), 'n']:,}, {n.loc[(a, g), 'deaths']} deaths)" for a, g in order])
+    ax.set_yticks(y, [f"{g} (n={n.loc[(a, g), 'n']:,}, {n.loc[(a, g), 'deaths_5y']} deaths in 5 y)" for a, g in order])
     for boundary in np.cumsum([len(table[(table["variant"] == "fused") & (table["attribute"] == a)])
                                for a, _ in attributes])[:-1]:
         ax.axhline(len(order) - boundary - 0.5, color=AXIS, linewidth=1)

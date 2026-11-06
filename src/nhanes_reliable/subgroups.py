@@ -17,13 +17,14 @@ def age_band(age: pd.Series, edges: tuple[int, ...] = AGE_EDGES) -> pd.Series:
 
 def subgroup_table(time: np.ndarray, died: np.ndarray, risk: np.ndarray, groups: pd.Series,
                    n_boot: int = 1000) -> pd.DataFrame:
-    """Per group: size, deaths, observed and mean predicted 5-year risk, C-index and CITL with CIs."""
+    """Per group: size, deaths (all and within 5 years), observed and mean predicted 5-year risk, C-index and CITL with CIs."""
     groups = np.asarray(groups.astype(str))
     rows = []
     for g in pd.unique(groups):
         idx = groups == g
         t, d, r = time[idx], died[idx], risk[idx]
-        row = {"group": g, "n": int(idx.sum()), "deaths": int(d.sum()), "observed5": km_risk(t, d, HORIZON),
+        row = {"group": g, "n": int(idx.sum()), "deaths": int(d.sum()),
+               "deaths_5y": int(((d == 1) & (t < HORIZON)).sum()), "observed5": km_risk(t, d, HORIZON),
                "mean_pred": float(r.mean())}
         for name, metric in [("c_index", c_index), ("citl5", citl5)]:
             row[name], row[f"{name}_lo"], row[f"{name}_hi"] = bootstrap_ci(metric, t, d, r, n_boot)
