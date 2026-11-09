@@ -222,7 +222,7 @@ python -m venv .venv
 bash scripts/run_all.sh
 ```
 
-`run_all.sh` runs the whole pipeline in order:
+Set `DEVICE` to choose the GPU (default `cuda`). `run_all.sh` runs the whole pipeline in order:
 
 1. downloads the PhysioNet accelerometry (checked against its SHA256 sums), the NHANES exam, lab and questionnaire files, and the linked mortality files;
 2. runs the tests;
