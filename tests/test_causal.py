@@ -49,3 +49,10 @@ def test_unadjusted_risks_are_group_means():
 def test_overlap_counts_extreme_propensities():
     out = overlap(np.array([0.01, 0.04, 0.5, 0.96, 0.99]))
     assert out == {"below_0.05": 0.4, "above_0.95": 0.4}
+
+
+def test_aipw_risk_can_return_the_propensities():
+    y, t, x, _ = _confounded(n=2000)
+    out, e = aipw_risk(y, t, x, "linear", return_propensity=True)
+    assert e.shape == (2000,) and e.min() >= 0.01 and e.max() <= 0.99
+    assert out == aipw_risk(y, t, x, "linear")

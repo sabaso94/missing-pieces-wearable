@@ -8,8 +8,9 @@ This repository studies that question on NHANES 2011–2014: one week of minute-
 - **Missing data types:** the wearable, the labs, the exam or the questionnaire removed at test time, and the people who really lack them (E2).
 - **Irregular wear:** how many valid wear days a prediction needs (E3).
 - **Subgroup calibration:** whether predicted risk matches observed mortality by sex, age and race/ethnicity (E4), and whether recalibration closes the gaps, and at what cost (E5).
+- **Activity as a cause:** how much of the association between daily activity and mortality survives adjustment and checks for reverse causation (E6).
 
-All numbers are out-of-fold: every person is scored by models that never saw them in training (5-fold cross-fitting). Confidence intervals are 95% intervals from a bootstrap that resamples people (1,000 resamples). Differences between two models are computed on the same resampled people.
+All numbers are out-of-fold: every person is scored by models that never saw them in training (5-fold cross-fitting). Confidence intervals are 95% intervals from a bootstrap that resamples people (1,000 resamples), except in E6, where they come from influence functions. Differences between two models are computed on the same resampled people.
 
 This is the companion study to [missing-pieces-ecg](https://github.com/sabaso94/missing-pieces-ecg), which asks the same reliability questions of a deep ECG classifier on PTB-XL.
 
@@ -201,12 +202,48 @@ The per-group versions need the group at prediction time. A gap counts as narrow
   - The intervals resample the scored people, not the fitting of the maps, so the size of this trade-off is less certain than they suggest.
   - Each person's race/ethnicity must also be recorded when the model is used, which the model itself never needed. Whether that trade is acceptable is a decision for the setting, not something this analysis can settle.
 
+### E6: activity and mortality: an effect, or illness that keeps people still?
+
+E1–E5 use activity to *predict* death. Whether being more active *lowers* the risk is a different question: people who are already ill move less, and they also die sooner. E6 asks how much of the association survives adjustment and two checks for reverse causation.
+
+- **Population:** the complete cases with a known 5-year status (7,999 people). The most active third (at least 583 active minutes a day) is compared with the least active third (fewer than 468); the middle third is left out.
+- **Question:** the risk of death within 5 years if everyone were in the most active third, against everyone in the least active third.
+- **Estimator:** augmented inverse probability weighting (doubly robust; Robins et al., 1994), with the models for activity and for death fitted by 5-fold cross-fitting (Chernozhukov et al., 2018), as logistic regressions or as gradient-boosted trees stopped early on held-out data. Intervals come from the influence functions.
+- **Adjustment:** none; age and sex; or every clinical input of the models (age, sex, labs, exam, questionnaire).
+- **Reverse-causation checks:** leaving out deaths in the first 2 years (the outcome is then death in years 2–5), and keeping only people healthy at baseline (self-rated health excellent to good, and none of heart failure, coronary disease, heart attack, stroke or cancer).
+- **E-value** (VanderWeele and Ding, 2017): the risk ratio an unmeasured confounder would need with both activity and death to explain the estimate away, and its interval's bound nearer 1.
+
+| Analysis | Adjustment | Risk, most active | Risk, least active | Risk ratio | E-value (point; CI) |
+|---|---|---|---|---|---|
+| all (n=5,333, 364 deaths) | none | 2.4% | 11.2% | 0.22 [0.17, 0.28] | – |
+|  | age and sex | 4.0% | 8.0% | 0.49 [0.40, 0.61] | 3.48; 2.66 |
+|  | all clinical inputs, linear | 6.5% | 7.0% | 0.92 [0.46, 1.85] | 1.38; 1.00 |
+|  | all clinical inputs, boosted | 5.5% | 7.3% | 0.76 [0.56, 1.03] | 1.96; 1.00 |
+| deaths in the first 2 years left out (n=5,224, 255 deaths) | none | 1.8% | 8.1% | 0.22 [0.16, 0.30] | – |
+|  | age and sex | 3.0% | 5.7% | 0.52 [0.40, 0.67] | 3.25; 2.35 |
+|  | all clinical inputs, linear | 7.5% | 5.4% | 1.40 [0.65, 3.01] | 2.15; 1.00 |
+|  | all clinical inputs, boosted | 4.2% | 5.3% | 0.80 [0.52, 1.22] | 1.82; 1.00 |
+| healthy at baseline (n=3,469, 112 deaths) | none | 1.5% | 5.4% | 0.28 [0.18, 0.42] | – |
+|  | age and sex | 2.0% | 3.9% | 0.53 [0.36, 0.77] | 3.21; 1.94 |
+|  | all clinical inputs, linear | 2.2% | 3.9% | 0.57 [0.34, 0.96] | 2.89; 1.26 |
+|  | all clinical inputs, boosted | 2.4% | 3.5% | 0.68 [0.41, 1.15] | 2.28; 1.00 |
+
+![E6 risk ratio of death by adjustment and analysis](figures/e6_activity.png)
+
+- **Unadjusted, the most active third dies at a fifth of the rate** of the least active: 2.4% against 11.2% within 5 years (risk ratio 0.22 [0.17, 0.28]).
+- **Age and sex account for about half of that:** the risk ratio rises to 0.49 [0.40, 0.61].
+- **With every clinical input, the association can no longer be told apart from none:** 0.92 [0.46, 1.85] with logistic models and 0.76 [0.56, 1.03] with boosted trees. Self-rated health, existing conditions, labs and grip strength carry most of what activity seemed to say. The logistic estimate's wide interval comes from poor overlap: 2.0% of people have an estimated chance below 0.05 of being in the most active third (0.8% with boosted trees), and the few of them who are in it carry large weights.
+- **Leaving out early deaths changes little,** which argues against the most acute reverse causation: 0.22 unadjusted and 0.52 with age and sex. The fully adjusted estimates stay uninformative (1.40 [0.65, 3.01] logistic, 0.80 [0.52, 1.22] boosted).
+- **Among people healthy at baseline, a protective association remains after full adjustment:** 0.57 [0.34, 0.96] with logistic models and 0.68 [0.41, 1.15] with boosted trees. An unmeasured confounder associated with both activity and death by a risk ratio of 2.9 would explain the first away; one of 1.3 would move its interval to include 1.
+
+Most of the crude association is age and existing ill health. What remains is smaller and uncertain, largest among people healthy at baseline. One measurement of activity per person cannot settle the rest: that needs repeated measurement of activity before illness, or a trial.
+
 ## Limitations
 
 - **Unweighted.** NHANES is a complex survey. The models and metrics here ignore the survey weights, so they describe this sample, not the US population.
 - **Perturbed public follow-up.** The public-use linked mortality files perturb follow-up time and cause of death for a subset of decedents to protect confidentiality. Vital status itself is not perturbed.
 - **One survey, no external validation.** Two cycles of one survey in one country; all results come from cross-fitting within it.
-- **Observational.** The analyses describe how the models behave. They do not identify why groups differ, and no input is a cause of death in any estimated sense.
+- **Observational.** E1–E5 describe how the models behave; they do not identify why groups differ. E6 asks how far one association could be causal, and its answer rests on measured confounders and a single activity measurement.
 - **Few deaths in some groups.** People aged 20–49 (48 deaths within 5 years), NH Asian/other (29) and people with real missing labs (33) give wide intervals, and the per-group recalibration maps of E5 rest on a few deaths each.
 - **Simulated versus real missingness.** E2 shows that removing a block at random is not the same as a block being really missing. The simulated results are an optimistic guide for people who really lack an input.
 - **Race/ethnicity.** It is used only to evaluate the models and to fit the per-group recalibration in E5, never as a model input. The groups are NHANES's self-reported categories, with Asian and other races merged.
@@ -229,14 +266,14 @@ Set `DEVICE` to choose the GPU (default `cuda`). `run_all.sh` runs the whole pip
 3. writes the cohort report and the folds;
 4. trains and evaluates the E1 models;
 5. runs E2 (training the fusion model without dropout);
-6. runs E4, E5 and E3;
+6. runs E4, E5, E3 and E6;
 7. draws the figures.
 
 Ensembles that already have checkpoints are loaded instead of retrained. Results are written to `results/` and figures to `figures/`. Seeds are fixed, and a full rerun from an empty `checkpoints/` (single GPU, PyTorch 2.0.0, CUDA 11.8) reproduced every CSV in `results/` and every figure exactly.
 
 ```
 src/nhanes_reliable/   data, activity days and summaries, folds, tabular features, Cox, fusion model, training,
-                       cross-fitting, survival metrics, subgroups, recalibration
+                       cross-fitting, survival metrics, subgroups, recalibration, causal estimates
 scripts/               one script per experiment, plus the cohort report, figures and run_all.sh
 tests/                 unit tests (pytest), runnable without the data
 results/               all reported numbers as CSV
@@ -260,3 +297,6 @@ figures/               the figures above
 - Davidson-Pilon, C. (2019). lifelines: survival analysis in Python. *Journal of Open Source Software* 4(40), 1317.
 - Goldberger, A. L. et al. (2000). PhysioBank, PhysioToolkit, and PhysioNet. *Circulation* 101(23), e215–e220.
 - National Center for Health Statistics. 2019 Public-Use Linked Mortality Files. Hyattsville, MD.
+- Robins, J. M., Rotnitzky, A., Zhao, L. P. (1994). Estimation of regression coefficients when some regressors are not always observed. *Journal of the American Statistical Association* 89, 846–866.
+- Chernozhukov, V. et al. (2018). Double/debiased machine learning for treatment and structural parameters. *The Econometrics Journal* 21, C1–C68.
+- VanderWeele, T. J., Ding, P. (2017). Sensitivity analysis in observational research: introducing the E-value. *Annals of Internal Medicine* 167(4), 268–274.

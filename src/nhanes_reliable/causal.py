@@ -51,7 +51,9 @@ def risk_unadjusted(y: np.ndarray, t: np.ndarray) -> dict:
 
 
 def aipw_risk(y: np.ndarray, t: np.ndarray, x: np.ndarray, nuisance: str = "linear", n_folds: int = 5, seed: int = 0,
-              clip: float = 0.01) -> dict:
+              clip: float = 0.01, return_propensity: bool = False):
+    """Risks under exposure and under none, their difference and ratio with 95% CIs (and, if asked, the
+    cross-fitted, clipped propensities)."""
     folds = np.empty(len(y), dtype=int)
     folds[np.random.default_rng(seed).permutation(len(y))] = np.arange(len(y)) % n_folds
     mu1, mu0, e = np.empty(len(y)), np.empty(len(y)), np.empty(len(y))
@@ -64,7 +66,7 @@ def aipw_risk(y: np.ndarray, t: np.ndarray, x: np.ndarray, nuisance: str = "line
     e = np.clip(e, clip, 1 - clip)
     psi1 = mu1 + t * (y - mu1) / e
     psi0 = mu0 + (1 - t) * (y - mu0) / (1 - e)
-    return _summary(psi1, psi0)
+    return (_summary(psi1, psi0), e) if return_propensity else _summary(psi1, psi0)
 
 
 def e_value(rr: float) -> float:

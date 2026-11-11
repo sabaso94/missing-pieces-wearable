@@ -158,11 +158,40 @@ def e4_e5_calibration() -> None:
     _save(fig, "e4_e5_calibration.png")
 
 
+def e6_activity() -> None:
+    table = pd.read_csv(RESULTS / "e6_activity.csv")
+    analyses = list(pd.unique(table["analysis"]))
+    variants = [("none", "-", "unadjusted"), ("age and sex", "linear", "age and sex"),
+                ("all clinical inputs", "linear", "all clinical inputs, linear"),
+                ("all clinical inputs", "boosting", "all clinical inputs, boosted")]
+    y = np.arange(len(analyses))[::-1]
+    fig, ax = plt.subplots(figsize=(7.2, 3.4))
+    for k, (adjustment, nuisance, label) in enumerate(variants):
+        rows = table[(table["adjustment"] == adjustment) & (table["nuisance"] == nuisance)].set_index("analysis")
+        rows = rows.loc[analyses]
+        ax.errorbar(rows["rr"], y + (1.5 - k) * 0.17, xerr=[rows["rr"] - rows["rr_low"], rows["rr_high"] - rows["rr"]],
+                    fmt="o", color=SERIES[k], markersize=5, elinewidth=1.5, capsize=0, label=label)
+    n = table.drop_duplicates("analysis").set_index("analysis")
+    ax.set_yticks(y, [f"{a}\n(n={n.loc[a, 'n']:,}, {n.loc[a, 'deaths']} deaths)" for a in analyses])
+    ax.set_xscale("log")
+    ticks = [0.2, 0.3, 0.5, 0.7, 1, 1.5, 2, 3]
+    ax.set_xticks(ticks, [f"{t:g}" for t in ticks])
+    ax.minorticks_off()
+    ax.axvline(1, color=MUTED, linewidth=1, linestyle=":")
+    ax.grid(axis="y", visible=False)
+    ax.set_xlabel("risk ratio of death within 5 years, most vs least active third (95% CI)")
+    ax.set_title("E6: activity and mortality, by adjustment", loc="left", fontsize=12, pad=10)
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.55, 0.0), ncol=2)
+    _save(fig, "e6_activity.png")
+
+
 def main() -> None:
     e1_reliability()
     e2_missing()
     e3_days()
     e4_e5_calibration()
+    e6_activity()
 
 
 if __name__ == "__main__":
