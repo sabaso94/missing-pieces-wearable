@@ -1,10 +1,16 @@
 analysis,adjustment,nuisance,below_0.05,above_0.95
-all,age and sex,linear,0.0000,0.0000
-all,all clinical inputs,linear,0.0201,0.0006
-all,all clinical inputs,boosting,0.0084,0.0000
-deaths in the first 2 years left out,age and sex,linear,0.0000,0.0000
-deaths in the first 2 years left out,all clinical inputs,linear,0.0165,0.0011
-deaths in the first 2 years left out,all clinical inputs,boosting,0.0067,0.0000
-healthy at baseline,age and sex,linear,0.0000,0.0000
-healthy at baseline,all clinical inputs,linear,0.0023,0.0020
-healthy at baseline,all clinical inputs,boosting,0.0000,0.0000
+all,age and sex,logistic,0.0000,0.0000
+all,pre-existing factors,logistic,0.0054,0.0004
+all,pre-existing factors,boosted,0.0058,0.0000
+all,all clinical inputs,logistic,0.0201,0.0006
+all,all clinical inputs,boosted,0.0084,0.0000
+deaths in the first 2 years left out,age and sex,logistic,0.0000,0.0000
+deaths in the first 2 years left out,pre-existing factors,logistic,0.0027,0.0008
+deaths in the first 2 years left out,pre-existing factors,boosted,0.0025,0.0000
+deaths in the first 2 years left out,all clinical inputs,logistic,0.0165,0.0011
+deaths in the first 2 years left out,all clinical inputs,boosted,0.0067,0.0000
+healthy at baseline,age and sex,logistic,0.0000,0.0000
+healthy at baseline,pre-existing factors,logistic,0.0009,0.0009
+healthy at baseline,pre-existing factors,boosted,0.0000,0.0000
+healthy at baseline,all clinical inputs,logistic,0.0023,0.0020
+healthy at baseline,all clinical inputs,boosted,0.0000,0.0000

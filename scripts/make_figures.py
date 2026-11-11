@@ -161,28 +161,34 @@ def e4_e5_calibration() -> None:
 def e6_activity() -> None:
     table = pd.read_csv(RESULTS / "e6_activity.csv")
     analyses = list(pd.unique(table["analysis"]))
-    variants = [("none", "-", "unadjusted"), ("age and sex", "linear", "age and sex"),
-                ("all clinical inputs", "linear", "all clinical inputs, linear"),
-                ("all clinical inputs", "boosting", "all clinical inputs, boosted")]
+    labels = {"all": "all", "deaths in the first 2 years left out": "deaths in the first 2 years left out\n(outcome: death in years 2-5)",
+              "healthy at baseline": "healthy at baseline"}
+    variants = [("none", "-", 0, "unadjusted"), ("age and sex", "logistic", 1, "age and sex"),
+                ("pre-existing factors", "logistic", 2, "pre-existing factors, logistic"),
+                ("pre-existing factors", "boosted", 2, "pre-existing factors, boosted"),
+                ("all clinical inputs", "logistic", 3, "all clinical inputs, logistic"),
+                ("all clinical inputs", "boosted", 3, "all clinical inputs, boosted")]
     y = np.arange(len(analyses))[::-1]
-    fig, ax = plt.subplots(figsize=(7.2, 3.4))
-    for k, (adjustment, nuisance, label) in enumerate(variants):
+    fig, ax = plt.subplots(figsize=(7.4, 4.4))
+    for k, (adjustment, nuisance, colour, label) in enumerate(variants):
         rows = table[(table["adjustment"] == adjustment) & (table["nuisance"] == nuisance)].set_index("analysis")
         rows = rows.loc[analyses]
-        ax.errorbar(rows["rr"], y + (1.5 - k) * 0.17, xerr=[rows["rr"] - rows["rr_low"], rows["rr_high"] - rows["rr"]],
-                    fmt="o", color=SERIES[k], markersize=5, elinewidth=1.5, capsize=0, label=label)
+        filled = nuisance != "logistic"
+        ax.errorbar(rows["rr"], y + (2.5 - k) * 0.13, xerr=[rows["rr"] - rows["rr_low"], rows["rr_high"] - rows["rr"]],
+                    fmt="o", color=SERIES[colour], markersize=5, elinewidth=1.5, capsize=0, label=label,
+                    markerfacecolor=SERIES[colour] if filled else SURFACE)
     n = table.drop_duplicates("analysis").set_index("analysis")
-    ax.set_yticks(y, [f"{a}\n(n={n.loc[a, 'n']:,}, {n.loc[a, 'deaths']} deaths)" for a in analyses])
+    ax.set_yticks(y, [f"{labels[a]}\n(n={n.loc[a, 'n']:,}, {n.loc[a, 'deaths']} deaths)" for a in analyses])
     ax.set_xscale("log")
     ticks = [0.2, 0.3, 0.5, 0.7, 1, 1.5, 2, 3]
     ax.set_xticks(ticks, [f"{t:g}" for t in ticks])
     ax.minorticks_off()
     ax.axvline(1, color=MUTED, linewidth=1, linestyle=":")
     ax.grid(axis="y", visible=False)
-    ax.set_xlabel("risk ratio of death within 5 years, most vs least active third (95% CI)")
+    ax.set_xlabel("risk ratio of death, most vs least active third (95% CI)")
     ax.set_title("E6: activity and mortality, by adjustment", loc="left", fontsize=12, pad=10)
-    handles, labels = ax.get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.55, 0.0), ncol=2)
+    handles, labels_ = ax.get_legend_handles_labels()
+    fig.legend(handles, labels_, loc="upper center", bbox_to_anchor=(0.55, 0.0), ncol=3, fontsize=8.5)
     _save(fig, "e6_activity.png")
 
 

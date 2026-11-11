@@ -76,3 +76,10 @@ def e_value(rr: float) -> float:
 
 def overlap(e: np.ndarray) -> dict:
     return {"below_0.05": float(np.mean(e < 0.05)), "above_0.95": float(np.mean(e > 0.95))}
+
+
+def e_value_ci(rr: float, rr_low: float, rr_high: float) -> float:
+    """E-value of the interval's bound nearer 1 (1 if the interval contains 1)."""
+    if rr_low <= 1 <= rr_high:
+        return 1.0
+    return e_value(rr_high if rr < 1 else rr_low)

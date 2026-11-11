@@ -56,3 +56,10 @@ def test_aipw_risk_can_return_the_propensities():
     out, e = aipw_risk(y, t, x, "linear", return_propensity=True)
     assert e.shape == (2000,) and e.min() >= 0.01 and e.max() <= 0.99
     assert out == aipw_risk(y, t, x, "linear")
+
+
+def test_e_value_of_an_interval_uses_the_bound_nearer_one():
+    from nhanes_reliable.causal import e_value_ci
+    assert e_value_ci(0.5, 0.3, 0.8) == e_value(0.8)    # protective: upper bound
+    assert e_value_ci(2.0, 1.25, 3.2) == e_value(1.25)  # harmful: lower bound
+    assert e_value_ci(1.4, 0.65, 3.0) == 1.0            # interval contains 1
