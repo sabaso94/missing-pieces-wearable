@@ -3,7 +3,9 @@
 aipw_risk estimates the risk of the outcome if everyone had been exposed and if no one had, by augmented inverse
 probability weighting (doubly robust; Robins et al., 1994), with outcome and exposure models fitted by 5-fold
 cross-fitting (Chernozhukov et al., 2018), linear or gradient-boosted (boosting stops early on a held-out 20% of
-the training rows). Intervals come from the influence functions; the risk ratio's on the log scale.
+the training rows). Intervals come from the influence functions; the risk ratio's on the log scale. With n_splits > 1
+the cross-fitting is repeated over random fold splits and the median is reported, with a standard error that adds
+the spread between splits (Chernozhukov et al., 2018, section 3.4), so the result does not hinge on one split.
 e_value is the minimum strength of association, on the risk-ratio scale, that an unmeasured confounder would need
 with both exposure and outcome to explain an observed risk ratio away (VanderWeele and Ding, 2017).
 """
@@ -50,10 +52,7 @@ def risk_unadjusted(y: np.ndarray, t: np.ndarray) -> dict:
     return _summary(r1 + t * (y - r1) / p1, r0 + (1 - t) * (y - r0) / (1 - p1))
 
 
-def aipw_risk(y: np.ndarray, t: np.ndarray, x: np.ndarray, nuisance: str = "linear", n_folds: int = 5, seed: int = 0,
-              clip: float = 0.01, return_propensity: bool = False):
-    """Risks under exposure and under none, their difference and ratio with 95% CIs (and, if asked, the
-    cross-fitted, clipped propensities)."""
+def _aipw_once(y, t, x, nuisance, n_folds, seed, clip):
     folds = np.empty(len(y), dtype=int)
     folds[np.random.default_rng(seed).permutation(len(y))] = np.arange(len(y)) % n_folds
     mu1, mu0, e = np.empty(len(y)), np.empty(len(y)), np.empty(len(y))
@@ -66,7 +65,31 @@ def aipw_risk(y: np.ndarray, t: np.ndarray, x: np.ndarray, nuisance: str = "line
     e = np.clip(e, clip, 1 - clip)
     psi1 = mu1 + t * (y - mu1) / e
     psi0 = mu0 + (1 - t) * (y - mu0) / (1 - e)
-    return (_summary(psi1, psi0), e) if return_propensity else _summary(psi1, psi0)
+    return _summary(psi1, psi0), e
+
+
+def _median_over_splits(outs: list[dict]) -> dict:
+    """Median estimate over splits; SE = median of sqrt(se_s^2 + (est_s - median)^2), for RD and log RR."""
+    rd = np.array([o["rd"] for o in outs])
+    se_rd = np.array([(o["rd_high"] - o["rd_low"]) / (2 * Z) for o in outs])
+    log_rr = np.log([o["rr"] for o in outs])
+    se_log_rr = np.array([np.log(o["rr_high"] / o["rr_low"]) / (2 * Z) for o in outs])
+    rd_m, lrr_m = np.median(rd), np.median(log_rr)
+    se_rd_m = np.median(np.sqrt(se_rd ** 2 + (rd - rd_m) ** 2))
+    se_lrr_m = np.median(np.sqrt(se_log_rr ** 2 + (log_rr - lrr_m) ** 2))
+    return {"risk1": float(np.median([o["risk1"] for o in outs])), "risk0": float(np.median([o["risk0"] for o in outs])),
+            "rd": float(rd_m), "rd_low": float(rd_m - Z * se_rd_m), "rd_high": float(rd_m + Z * se_rd_m),
+            "rr": float(np.exp(lrr_m)), "rr_low": float(np.exp(lrr_m - Z * se_lrr_m)),
+            "rr_high": float(np.exp(lrr_m + Z * se_lrr_m))}
+
+
+def aipw_risk(y: np.ndarray, t: np.ndarray, x: np.ndarray, nuisance: str = "linear", n_folds: int = 5, seed: int = 0,
+              clip: float = 0.01, return_propensity: bool = False, n_splits: int = 1):
+    """Risks under exposure and under none, their difference and ratio with 95% CIs (and, if asked, the
+    cross-fitted, clipped propensities of the first split). Split s uses seed + s."""
+    runs = [_aipw_once(y, t, x, nuisance, n_folds, seed + s, clip) for s in range(n_splits)]
+    out = runs[0][0] if n_splits == 1 else _median_over_splits([r[0] for r in runs])
+    return (out, runs[0][1]) if return_propensity else out
 
 
 def e_value(rr: float) -> float:

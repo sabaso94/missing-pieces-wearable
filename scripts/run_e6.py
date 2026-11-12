@@ -29,6 +29,7 @@ CONDITIONS = ["heart_failure", "coronary_disease", "heart_attack", "stroke", "ca
 # Factors that precede a person's activity level rather than follow from it: confounders, not pathways.
 PRE_EXISTING = ["age", "female", "current_smoker", "former_smoker", "education", "income_poverty",
                 "self_rated_health", *CONDITIONS]
+N_SPLITS = 10  # cross-fitting repeated over 10 random fold splits; the median is reported
 NUISANCE_LABEL = {"linear": "logistic", "boosting": "boosted"}
 
 
@@ -41,7 +42,7 @@ def analysis_sets(cohort: pd.DataFrame) -> dict[str, pd.DataFrame]:
     base = base[(base["act_active_minutes"] < low) | (base["act_active_minutes"] >= high)].copy()
     base["exposed"] = (base["act_active_minutes"] >= high).astype(int)
     early = (base["died"] == 1) & (base["time_years"] < 2)
-    healthy = (base["self_rated_health"] <= 3) & ~(base[CONDITIONS] == 1).any(axis=1)
+    healthy = (base["self_rated_health"] <= 3) & (base[CONDITIONS] == 0).all(axis=1)  # a missing answer is not "none"
     return {"all": base, "deaths in the first 2 years left out": base[~early],
             "healthy at baseline": base[healthy]}
 
@@ -65,7 +66,7 @@ def main() -> None:
         rows.append(info | {"adjustment": "none", "nuisance": "-"} | risk_unadjusted(y, t))
         for adjustment, x in adjustment_sets(df).items():
             for nuisance in (["linear"] if adjustment == "age and sex" else ["linear", "boosting"]):
-                out, e = aipw_risk(y, t, x, nuisance, return_propensity=True)
+                out, e = aipw_risk(y, t, x, nuisance, return_propensity=True, n_splits=N_SPLITS)
                 label = NUISANCE_LABEL[nuisance]
                 row = info | {"adjustment": adjustment, "nuisance": label} | out
                 row["e_value"] = e_value(out["rr"])

@@ -208,44 +208,44 @@ E1–E5 use activity to *predict* death. Whether being more active *lowers* the 
 
 - **Population:** the complete cases with a known 5-year status (7,999 people). The most active third (at least 583 active minutes a day) is compared with the least active third (fewer than 468); the middle third is left out.
 - **Question:** the risk of death within 5 years if everyone were in the most active third, against everyone in the least active third.
-- **Estimator:** augmented inverse probability weighting (doubly robust; Robins et al., 1994), with the models for activity and for death fitted by 5-fold cross-fitting (Chernozhukov et al., 2018), as logistic regressions or as gradient-boosted trees stopped early on held-out data. Estimated probabilities of being in the most active third are clipped to [0.01, 0.99]. Intervals come from the influence functions.
+- **Estimator:** augmented inverse probability weighting (doubly robust; Robins et al., 1994), with the models for activity and for death fitted by 5-fold cross-fitting (Chernozhukov et al., 2018), as logistic regressions or as gradient-boosted trees stopped early on held-out data. Estimated probabilities of being in the most active third are clipped to [0.01, 0.99]. Intervals come from the influence functions. The cross-fitting is repeated over 10 random fold splits and the median is reported, with an interval that also covers the spread between splits (Chernozhukov et al., 2018), so no result hinges on one split.
 - **Adjustment:**
   - none, or age and sex;
   - **pre-existing factors:** what comes before a person's activity level rather than following from it: age, sex, smoking, education, income, self-rated health, and heart failure, coronary disease, heart attack, stroke and cancer;
   - **all clinical inputs** of the models, which add factors that activity itself may change: BMI, waist, blood pressure, labs, grip strength and diabetes. Adjusting for these removes the part of any effect that runs through them, so this estimate is conservative for the total effect of activity.
-- **Reverse-causation checks:** leaving out deaths in the first 2 years (the outcome is then death in years 2–5), and keeping only people healthy at baseline (self-rated health excellent to good, and none of the five conditions).
+- **Reverse-causation checks:** leaving out deaths in the first 2 years (the outcome is then death in years 2–5), and keeping only people healthy at baseline (self-rated health excellent to good, and a "no" to each of the five conditions).
 - **E-value** (VanderWeele and Ding, 2017): the risk ratio an unmeasured confounder would need with both activity and death to explain the estimate away, and to move its interval to include 1.
 
 | Analysis | Adjustment | Risk, most active | Risk, least active | Risk ratio | E-value (point; CI) |
 |---|---|---|---|---|---|
 | all (n=5,333, 364 deaths) | none | 2.4% | 11.2% | 0.22 [0.17, 0.28] | – |
-|  | age and sex | 4.0% | 8.0% | 0.49 [0.40, 0.61] | 3.48; 2.66 |
-|  | pre-existing factors, logistic | 6.0% | 7.5% | 0.80 [0.44, 1.43] | 1.82; 1.00 |
-|  | pre-existing factors, boosted | 5.0% | 7.6% | 0.66 [0.49, 0.88] | 2.40; 1.52 |
-|  | all clinical inputs, logistic | 6.5% | 7.0% | 0.92 [0.46, 1.85] | 1.38; 1.00 |
-|  | all clinical inputs, boosted | 5.5% | 7.3% | 0.76 [0.56, 1.03] | 1.96; 1.00 |
+|  | age and sex | 3.9% | 8.0% | 0.49 [0.40, 0.61] | 3.49; 2.67 |
+|  | pre-existing factors, logistic | 6.0% | 7.6% | 0.79 [0.43, 1.45] | 1.85; 1.00 |
+|  | pre-existing factors, boosted | 5.2% | 7.6% | 0.68 [0.50, 0.92] | 2.31; 1.41 |
+|  | all clinical inputs, logistic | 7.4% | 7.1% | 1.00 [0.50, 2.00] | 1.02; 1.00 |
+|  | all clinical inputs, boosted | 5.6% | 7.2% | 0.77 [0.56, 1.06] | 1.91; 1.00 |
 | deaths in the first 2 years left out (n=5,224, 255 deaths) | none | 1.8% | 8.1% | 0.22 [0.16, 0.30] | – |
 |  | age and sex | 3.0% | 5.7% | 0.52 [0.40, 0.67] | 3.25; 2.35 |
-|  | pre-existing factors, logistic | 5.0% | 5.7% | 0.88 [0.43, 1.79] | 1.54; 1.00 |
-|  | pre-existing factors, boosted | 3.6% | 5.6% | 0.64 [0.43, 0.97] | 2.49; 1.22 |
-|  | all clinical inputs, logistic | 7.5% | 5.4% | 1.40 [0.65, 3.01] | 2.15; 1.00 |
-|  | all clinical inputs, boosted | 4.2% | 5.3% | 0.80 [0.52, 1.22] | 1.82; 1.00 |
-| healthy at baseline (n=3,469, 112 deaths) | none | 1.5% | 5.4% | 0.28 [0.18, 0.42] | – |
-|  | age and sex | 2.0% | 3.9% | 0.53 [0.36, 0.77] | 3.21; 1.94 |
-|  | pre-existing factors, logistic | 2.0% | 6.0% | 0.34 [0.15, 0.75] | 5.41; 2.01 |
-|  | pre-existing factors, boosted | 2.1% | 3.8% | 0.56 [0.34, 0.91] | 2.99; 1.41 |
-|  | all clinical inputs, logistic | 2.2% | 3.9% | 0.57 [0.34, 0.96] | 2.89; 1.26 |
-|  | all clinical inputs, boosted | 2.4% | 3.5% | 0.68 [0.41, 1.15] | 2.28; 1.00 |
+|  | pre-existing factors, logistic | 5.0% | 5.6% | 0.90 [0.44, 1.85] | 1.46; 1.00 |
+|  | pre-existing factors, boosted | 3.8% | 5.5% | 0.69 [0.47, 1.01] | 2.25; 1.00 |
+|  | all clinical inputs, logistic | 6.0% | 5.4% | 1.11 [0.53, 2.31] | 1.46; 1.00 |
+|  | all clinical inputs, boosted | 4.1% | 5.3% | 0.77 [0.51, 1.16] | 1.93; 1.00 |
+| healthy at baseline (n=3,465, 112 deaths) | none | 1.5% | 5.4% | 0.28 [0.18, 0.42] | – |
+|  | age and sex | 2.1% | 3.9% | 0.52 [0.36, 0.76] | 3.22; 1.96 |
+|  | pre-existing factors, logistic | 2.0% | 3.9% | 0.52 [0.35, 0.78] | 3.25; 1.89 |
+|  | pre-existing factors, boosted | 2.2% | 3.7% | 0.60 [0.36, 0.99] | 2.73; 1.12 |
+|  | all clinical inputs, logistic | 2.3% | 3.5% | 0.65 [0.40, 1.05] | 2.47; 1.00 |
+|  | all clinical inputs, boosted | 2.4% | 3.5% | 0.67 [0.39, 1.12] | 2.37; 1.00 |
 
 ![E6 risk ratio of death by adjustment and analysis](figures/e6_activity.png)
 
 - **Unadjusted, the most active third has a fifth of the risk** of the least active: 2.4% against 11.2% within 5 years (risk ratio 0.22 [0.17, 0.28]). Age and sex account for about half of that (0.49 [0.40, 0.61]).
-- **Adjusted for pre-existing factors, a smaller association remains:** 0.66 [0.49, 0.88] with boosted trees. An unmeasured confounder associated with both activity and death by a risk ratio of 2.4 would explain it away; one of 1.5 would move its interval to include 1.
-- **It holds in both reverse-causation checks:** 0.64 [0.43, 0.97] with deaths in the first 2 years left out, and 0.56 [0.34, 0.91] among people healthy at baseline (boosted trees, pre-existing factors).
-- **Adjusting also for factors activity may change pulls it towards 1:** 0.76 [0.56, 1.03] in everyone, 0.80 [0.52, 1.22] with early deaths left out, and 0.68 [0.41, 1.15] among the healthy (boosted trees). Whether that adjustment is right depends on whether BMI, blood pressure and glucose are treated as confounders or as pathways.
-- **The logistic estimates are unstable.** With many inputs, a few very active people whom the model considered unlikely to be very active get large weights: with all clinical inputs, 2.0% of people have an estimated probability below 0.05 (0.8% with boosted trees). The logistic point estimates range from 0.34 to 1.40 across analyses, and outside the healthy subgroup their intervals are two and a half to three and a half times as wide as the boosted ones, so they say little either way.
+- **Adjusted for pre-existing factors, a smaller association remains:** 0.68 [0.50, 0.92] with boosted trees. An unmeasured confounder associated with both activity and death by a risk ratio of 2.3 would explain it away; one of 1.4 would move its interval to include 1.
+- **The reverse-causation checks leave it about the same:** 0.69 [0.47, 1.01] with deaths in the first 2 years left out, where the interval just reaches 1, and 0.60 [0.36, 0.99] among people healthy at baseline (boosted trees, pre-existing factors).
+- **Adjusting also for factors activity may change pulls it towards 1:** 0.77 [0.56, 1.06] in everyone, 0.77 [0.51, 1.16] with early deaths left out, and 0.67 [0.39, 1.12] among the healthy (boosted trees). Whether that adjustment is right depends on whether BMI, blood pressure and glucose are treated as confounders or as pathways.
+- **The logistic estimates are unstable.** With many inputs, a few very active people whom the model considered unlikely to be very active get large weights: with all clinical inputs, 2.0% of people have an estimated probability below 0.05 (0.8% with boosted trees). The logistic point estimates range from 0.52 to 1.11 across analyses, and outside the healthy subgroup their intervals are about two and a half to three times as wide as the boosted ones, so they say little either way.
 
-Age and measured health explain most of the crude association. Adjusted for what comes before activity, the most active third still has about a third lower risk, also after leaving out early deaths and among people healthy at baseline. That is an association of moderate robustness, not a proven effect: a single activity measurement cannot rule out a confounder of moderate strength.
+Age and measured health explain most of the crude association. Adjusted for what comes before activity, the most active third still has about a third lower risk (0.60 to 0.69 across the three analyses), although with early deaths left out the interval just reaches 1. That is an association of moderate robustness, not a proven effect: a single activity measurement cannot rule out a confounder of moderate strength.
 
 ## Limitations
 

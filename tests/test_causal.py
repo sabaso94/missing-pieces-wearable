@@ -63,3 +63,13 @@ def test_e_value_of_an_interval_uses_the_bound_nearer_one():
     assert e_value_ci(0.5, 0.3, 0.8) == e_value(0.8)    # protective: upper bound
     assert e_value_ci(2.0, 1.25, 3.2) == e_value(1.25)  # harmful: lower bound
     assert e_value_ci(1.4, 0.65, 3.0) == 1.0            # interval contains 1
+
+
+def test_repeated_cross_fitting_takes_the_median_over_splits():
+    y, t, x, _ = _confounded(n=3000)
+    singles = [aipw_risk(y, t, x, "linear", seed=s) for s in range(5)]
+    out = aipw_risk(y, t, x, "linear", n_splits=5)
+    assert abs(out["rd"] - np.median([s["rd"] for s in singles])) < 1e-12
+    assert abs(np.log(out["rr"]) - np.median([np.log(s["rr"]) for s in singles])) < 1e-12
+    # the interval adds the spread between splits, so it is at least as wide as the median single-split interval
+    assert out["rd_high"] - out["rd_low"] >= np.median([s["rd_high"] - s["rd_low"] for s in singles]) - 1e-12
