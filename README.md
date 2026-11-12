@@ -12,7 +12,7 @@ This repository studies that question on NHANES 2011–2014: one week of minute-
 
 All numbers are out-of-fold: every person is scored by models that never saw them in training (5-fold cross-fitting). Confidence intervals are 95% intervals from a bootstrap that resamples people (1,000 resamples), except in E6, where they come from influence functions. Differences between two models are computed on the same resampled people.
 
-This is the companion study to [missing-pieces-ecg](https://github.com/sabaso94/missing-pieces-ecg), which asks the same reliability questions of a deep ECG classifier on PTB-XL.
+This is the second of four studies in a series with [missing-pieces-ecg](https://github.com/sabaso94/missing-pieces-ecg) (a deep ECG classifier with missing leads, subgroups and shift), [missing-pieces-retina](https://github.com/sabaso94/missing-pieces-retina) (a retinal screening model at clinics it never saw) and [missing-pieces-trajectory](https://github.com/sabaso94/missing-pieces-trajectory) (causal estimates and missing follow-up checked against a randomised trial).
 
 ## Motivation
 
