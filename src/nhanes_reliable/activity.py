@@ -22,14 +22,14 @@ ACTIVE_MIMS = 10.558
 WORN_CODES = (1, 2)  # PAXPREDM: 1 wake wear, 2 sleep wear
 
 SUMMARY_NAMES: list[str] = [
-    "total_mims",              # mean daily sum of MIMS
-    "active_minutes",          # mean daily minutes with MIMS >= ACTIVE_MIMS
-    "peak30_mims",             # mean daily average of the 30 highest minutes
-    "astp",                    # P(next minute inactive | active minute), pooled over days
-    "satp",                    # P(next minute active | inactive minute)
-    "m10",                     # mean MIMS of the most active 10 consecutive hours of the average day
-    "l5",                      # mean MIMS of the least active 5 consecutive hours
-    "relative_amplitude",      # (M10 - L5) / (M10 + L5)
+    "total_mims",  # mean daily sum of MIMS
+    "active_minutes",  # mean daily minutes with MIMS >= ACTIVE_MIMS
+    "peak30_mims",  # mean daily average of the 30 highest minutes
+    "astp",  # P(next minute inactive | active minute), pooled over days
+    "satp",  # P(next minute active | inactive minute)
+    "m10",  # mean MIMS of the most active 10 consecutive hours of the average day
+    "l5",  # mean MIMS of the least active 5 consecutive hours
+    "relative_amplitude",  # (M10 - L5) / (M10 + L5)
     "intradaily_variability",  # fragmentation of the hourly series
     "n_valid_days",
 ]
@@ -37,8 +37,8 @@ SUMMARY_NAMES: list[str] = [
 
 @dataclass
 class DayData:
-    seqn: np.ndarray      # (N,) NHANES ids
-    x: np.ndarray         # (N, 7, 2, 1440) float32: channel 0 log10(1 + MIMS) (0 where not worn), channel 1 worn
+    seqn: np.ndarray  # (N,) NHANES ids
+    x: np.ndarray  # (N, 7, 2, 1440) float32: channel 0 log10(1 + MIMS) (0 where not worn), channel 1 worn
     day_mask: np.ndarray  # (N, 7) bool: which of the 7 slots hold a valid day
 
 
@@ -47,8 +47,9 @@ def valid_day(worn: np.ndarray) -> np.ndarray:
     return worn.sum(axis=1) >= MIN_WEAR_MINUTES
 
 
-def select_valid_days(row_seqn: np.ndarray, row_day: np.ndarray, log_mims: np.ndarray, worn: np.ndarray,
-                      seqn: np.ndarray) -> DayData:
+def select_valid_days(
+    row_seqn: np.ndarray, row_day: np.ndarray, log_mims: np.ndarray, worn: np.ndarray, seqn: np.ndarray
+) -> DayData:
     """Keep each person's first MAX_DAYS valid days, in recording order, as a DayData aligned to `seqn`."""
     order = np.lexsort((row_day, row_seqn))
     row_seqn, log_mims, worn = row_seqn[order], log_mims[order], worn[order]
@@ -85,8 +86,12 @@ def _build_days(data_dir: Path, seqn: np.ndarray) -> DayData:
     row_seqn, row_day, log_mims = _read_minute_file(folder / "nhanes_1440_log10PAXMTSM.csv.xz")
     s2, d2, prediction = _read_minute_file(folder / "nhanes_1440_PAXPREDM.csv.xz")
     s3, d3, unflagged = _read_minute_file(folder / "nhanes_1440_PAXFLGSM.csv.xz", flags=True)
-    if not (np.array_equal(row_seqn, s2) and np.array_equal(row_seqn, s3)
-            and np.array_equal(row_day, d2) and np.array_equal(row_day, d3)):
+    if not (
+        np.array_equal(row_seqn, s2)
+        and np.array_equal(row_seqn, s3)
+        and np.array_equal(row_day, d2)
+        and np.array_equal(row_day, d3)
+    ):
         raise ValueError("the minute-level files are not in the same row order")
     worn = np.isin(prediction, WORN_CODES) & unflagged & ~np.isnan(log_mims)
     return select_valid_days(row_seqn, row_day, log_mims, worn, seqn)

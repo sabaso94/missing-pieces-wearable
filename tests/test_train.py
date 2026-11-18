@@ -21,8 +21,9 @@ from nhanes_reliable.train import (
 def synthetic_cohort(n=300, seed=0):
     """Cohort whose hazard rises with hba1c; some people have no valid wear day or no labs."""
     rng = np.random.default_rng(seed)
-    cohort = pd.DataFrame({v: rng.normal(size=n) for b in BLOCKS.values() for v in b},
-                          index=pd.Index(np.arange(n), name="seqn"))
+    cohort = pd.DataFrame(
+        {v: rng.normal(size=n) for b in BLOCKS.values() for v in b}, index=pd.Index(np.arange(n), name="seqn")
+    )
     t = rng.exponential(1 / (0.1 * np.exp(1.5 * cohort["hba1c"].to_numpy())))
     cohort["time_years"], cohort["died"] = np.minimum(t, 9.5), (t < 9.5).astype(int)
     x = np.zeros((n, 7, 2, 1440), np.float32)
@@ -68,7 +69,9 @@ def test_apply_flags_blanks_block_like_missing():
     assert not mask2.any()
     # A block removed this way looks exactly like a block that was missing in the data.
     missing_row = inputs.tab[-1]  # the last people have no labs
-    assert (missing_row[labs & inputs.tab_indicator] == 1).all() and (missing_row[labs & ~inputs.tab_indicator] == 0).all()
+    assert (missing_row[labs & inputs.tab_indicator] == 1).all() and (
+        missing_row[labs & ~inputs.tab_indicator] == 0
+    ).all()
 
 
 def test_day_dropout_keeps_at_least_one():
@@ -111,8 +114,9 @@ def test_checkpoint_reload_identical(tmp_path):
     cfg = TrainConfig(model="fused", device="cpu", max_epochs=2, patience=2)
     first = train_ensemble(cfg, inputs, fit, hold, tmp_path, seeds=range(2))
     again = train_ensemble(cfg, inputs, fit, hold, tmp_path, seeds=range(2))
-    np.testing.assert_array_equal(predict_risk(first, inputs, hold, device="cpu"),
-                                  predict_risk(again, inputs, hold, device="cpu"))
+    np.testing.assert_array_equal(
+        predict_risk(first, inputs, hold, device="cpu"), predict_risk(again, inputs, hold, device="cpu")
+    )
 
 
 def test_removed_blocks_change_prediction_but_stay_valid():

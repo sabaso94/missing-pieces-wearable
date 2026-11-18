@@ -4,6 +4,8 @@ The activity summaries (for the Cox models) live in the cohort frame as ACTIVITY
 wearable block; the deep models see the wearable block as the day tensor instead.
 """
 
+from collections.abc import Sequence
+
 import numpy as np
 import pandas as pd
 
@@ -31,8 +33,9 @@ def fit_tab_stats(df: pd.DataFrame, variables: list[str]) -> dict[str, tuple[flo
     return stats
 
 
-def make_tab_features(df: pd.DataFrame, stats: dict[str, tuple[float, float]],
-                      variables: list[str]) -> tuple[np.ndarray, list[str]]:
+def make_tab_features(
+    df: pd.DataFrame, stats: dict[str, tuple[float, float]], variables: list[str]
+) -> tuple[np.ndarray, list[str]]:
     """(N, 2V) float32: standardised values with missing set to 0 (the training mean), then 0/1 indicators.
 
     Standardised values are clipped at +-5 SD so that a few extreme lab values cannot dominate a linear model.
@@ -55,7 +58,7 @@ def remove_blocks(df: pd.DataFrame, blocks: list[str]) -> pd.DataFrame:
     return out
 
 
-def block_flags(cohort: pd.DataFrame, removed: list[str] = ()) -> np.ndarray:
+def block_flags(cohort: pd.DataFrame, removed: Sequence[str] = ()) -> np.ndarray:
     """(N, 4) float32 block-present flags in REMOVABLE order; removed blocks are forced to 0."""
     flags = np.column_stack([cohort[f"has_{b}"].to_numpy(dtype=float) for b in REMOVABLE])
     for b in removed:

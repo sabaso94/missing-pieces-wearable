@@ -26,7 +26,7 @@ CONDITIONS: dict[str, list[str]] = {
     "no_labs": ["labs"],
     "no_exam": ["exam"],
     "no_questionnaire": ["questionnaire"],
-    "no_clinic": ["labs", "exam"],                       # remote monitoring: wearable + questionnaire + age, sex
+    "no_clinic": ["labs", "exam"],  # remote monitoring: wearable + questionnaire + age, sex
     "questionnaire_only": ["wearable", "labs", "exam"],  # questionnaire + age, sex
 }
 
@@ -61,8 +61,9 @@ def fold_splits(cohort: pd.DataFrame, folds: pd.Series, train_on: str = "all"):
         yield int(k), test, fit, hold
 
 
-def _cox_fold(model: str, cohort: pd.DataFrame, fit: np.ndarray, conditions: dict[str, list[str]],
-              rows: np.ndarray) -> dict[str, np.ndarray]:
+def _cox_fold(
+    model: str, cohort: pd.DataFrame, fit: np.ndarray, conditions: dict[str, list[str]], rows: np.ndarray
+) -> dict[str, np.ndarray]:
     """Risk for `rows` under each condition from Cox model(s) fitted on `fit`.
 
     Standard Cox models are fitted once and see removed blocks as missing (imputed, indicators on).
@@ -71,10 +72,7 @@ def _cox_fold(model: str, cohort: pd.DataFrame, fit: np.ndarray, conditions: dic
     time, died = cohort["time_years"].to_numpy(), cohort["died"].to_numpy()
     out, fitted = {}, None
     for condition, removed in conditions.items():
-        if model == "cox_subset":
-            blocks = [b for b in COX_MODELS["cox_full"] if b not in removed]
-        else:
-            blocks = COX_MODELS[model]
+        blocks = [b for b in COX_MODELS["cox_full"] if b not in removed] if model == "cox_subset" else COX_MODELS[model]
         if model == "cox_subset" or fitted is None:
             stats = fit_tab_stats(cohort.iloc[fit], tab_variables(blocks, with_activity=True))
             X = cox_design(cohort, blocks, stats)
@@ -84,9 +82,17 @@ def _cox_fold(model: str, cohort: pd.DataFrame, fit: np.ndarray, conditions: dic
     return out
 
 
-def crossfit(model: str, cohort: pd.DataFrame, days: DayData | None, folds: pd.Series,
-             conditions: dict[str, list[str]], device: str, train_on: str = "all",
-             preds_dir: Path = PREDS, ckpt_root: Path = CHECKPOINTS) -> pd.DataFrame:
+def crossfit(
+    model: str,
+    cohort: pd.DataFrame,
+    days: DayData | None,
+    folds: pd.Series,
+    conditions: dict[str, list[str]],
+    device: str,
+    train_on: str = "all",
+    preds_dir: Path = PREDS,
+    ckpt_root: Path = CHECKPOINTS,
+) -> pd.DataFrame:
     """Out-of-fold and hold-out 5-year risks of one model under each condition; saved to preds_dir/<model>.csv.
 
     train_on="complete" fits only on complete cases (used for the naive deep model and the per-subset Cox).
@@ -95,16 +101,22 @@ def crossfit(model: str, cohort: pd.DataFrame, days: DayData | None, folds: pd.S
     for k, test, fit, hold in fold_splits(cohort, folds, train_on):
         rows = np.r_[test, hold]
         if model in DEEP_MODELS:
+            if days is None:
+                raise ValueError(f"{model} needs the day-level activity data")
             inputs = build_fold_inputs(cohort, days, fit, model)
-            members = train_ensemble(TrainConfig(model=model, device=device), inputs, fit, hold,
-                                     ckpt_root / model / f"fold{k}")
+            members = train_ensemble(
+                TrainConfig(model=model, device=device), inputs, fit, hold, ckpt_root / model / f"fold{k}"
+            )
             risks = {c: predict_risk(members, inputs, rows, removed=r, device=device) for c, r in conditions.items()}
         else:
             risks = _cox_fold(model, cohort, fit, conditions, rows)
         split = np.r_[np.full(len(test), "oof"), np.full(len(hold), "hold")]
         for condition, risk in risks.items():
-            records.append(pd.DataFrame({"seqn": cohort.index[rows], "fold": int(k), "split": split,
-                                         "condition": condition, "risk5": risk}))
+            records.append(
+                pd.DataFrame(
+                    {"seqn": cohort.index[rows], "fold": int(k), "split": split, "condition": condition, "risk5": risk}
+                )
+            )
         print(f"{model}: fold {k} done", flush=True)
     preds = pd.concat(records, ignore_index=True)
     Path(preds_dir).mkdir(parents=True, exist_ok=True)

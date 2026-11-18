@@ -22,11 +22,16 @@ MIN_DEATHS = 40
 
 
 def summarise(df: pd.DataFrame, name: str) -> dict:
-    return {"set": name, "n": len(df), "deaths": int(df["died"].sum()),
-            "deaths_5y": int(((df["died"] == 1) & (df["time_years"] < 5)).sum()),
-            "median_followup_years": round(float(df["time_years"].median()), 2),
-            "censored_before_5y": int(((df["died"] == 0) & (df["time_years"] < 5)).sum()),
-            "mean_age": round(float(df["age"].mean()), 1), "female": round(float(df["female"].mean()), 3)}
+    return {
+        "set": name,
+        "n": len(df),
+        "deaths": int(df["died"].sum()),
+        "deaths_5y": int(((df["died"] == 1) & (df["time_years"] < 5)).sum()),
+        "median_followup_years": round(float(df["time_years"].median()), 2),
+        "censored_before_5y": int(((df["died"] == 0) & (df["time_years"] < 5)).sum()),
+        "mean_age": round(float(df["age"].mean()), 1),
+        "female": round(float(df["female"].mean()), 3),
+    }
 
 
 def merge_small(groups: pd.Series, died: pd.Series, order: list[str]) -> dict[str, str]:
@@ -63,8 +68,14 @@ def main() -> None:
     missing_rows = []
     for column in missing:
         people = cohort[missing[column]]
-        missing_rows.append({"missing": column, "n": len(people), "deaths": int(people["died"].sum()),
-                             "mean_age": round(float(people["age"].mean()), 1) if len(people) else np.nan})
+        missing_rows.append(
+            {
+                "missing": column,
+                "n": len(people),
+                "deaths": int(people["died"].sum()),
+                "mean_age": round(float(people["age"].mean()), 1) if len(people) else np.nan,
+            }
+        )
     missing_table = pd.DataFrame(missing_rows)
     missing_table.to_csv(RESULTS / "missing_blocks.csv", index=False)
     print("\n" + missing_table.to_string(index=False))
@@ -72,9 +83,11 @@ def main() -> None:
     age = age_band(complete["age"]).astype(str)
     age_order = [str(c) for c in age_band(pd.Series([float(e) for e in AGE_EDGES])).cat.categories]
     race_order = ["NH White", "NH Black", "Hispanic", "NH Asian/other"]
-    groups = {"age_band": merge_small(age, complete["died"], age_order),
-              "race": merge_small(complete["race"], complete["died"], race_order),
-              "sex": {"male": "male", "female": "female"}}
+    groups = {
+        "age_band": merge_small(age, complete["died"], age_order),
+        "race": merge_small(complete["race"], complete["died"], race_order),
+        "sex": {"male": "male", "female": "female"},
+    }
     print("\ndeaths per group (complete cases):")
     print(" age:", complete["died"].groupby(age).sum().to_dict())
     print(" race:", complete["died"].groupby(complete["race"]).sum().to_dict())

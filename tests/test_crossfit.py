@@ -9,8 +9,9 @@ from nhanes_reliable.tabular import ACTIVITY_COLUMNS
 
 def synthetic(n=400, seed=0):
     rng = np.random.default_rng(seed)
-    cohort = pd.DataFrame({v: rng.normal(size=n) for b in BLOCKS.values() for v in b},
-                          index=pd.Index(np.arange(n) + 100, name="seqn"))
+    cohort = pd.DataFrame(
+        {v: rng.normal(size=n) for b in BLOCKS.values() for v in b}, index=pd.Index(np.arange(n) + 100, name="seqn")
+    )
     for c in ACTIVITY_COLUMNS:
         cohort[c] = rng.normal(size=n)
     t = rng.exponential(1 / (0.08 * np.exp(cohort["age"].to_numpy())))
@@ -50,8 +51,16 @@ def test_train_on_complete_excludes_incomplete(tmp_path, monkeypatch):
         return original(X, time, died, **kwargs)
 
     monkeypatch.setattr(cf, "fit_cox", spy)
-    cf.crossfit("cox_subset", cohort, None, assign_folds(cohort), {"none": [], "no_labs": ["labs"]},
-                device="cpu", train_on="complete", preds_dir=tmp_path)
+    cf.crossfit(
+        "cox_subset",
+        cohort,
+        None,
+        assign_folds(cohort),
+        {"none": [], "no_labs": ["labs"]},
+        device="cpu",
+        train_on="complete",
+        preds_dir=tmp_path,
+    )
     assert seen and all(cohort.loc[index, "complete_case"].all() for index in seen)
 
 

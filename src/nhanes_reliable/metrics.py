@@ -6,9 +6,10 @@ rows.
 """
 
 import warnings
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from lifelines.utils import concordance_index
 
@@ -80,12 +81,18 @@ def reliability_table(time: np.ndarray, died: np.ndarray, risk: np.ndarray, n_bi
     rows = []
     for b in range(n_bins):
         idx = bins == b
-        rows.append({"bin": b, "n": int(idx.sum()), "mean_pred": float(risk[idx].mean()),
-                     "observed": km_risk(time[idx], died[idx], HORIZON)})
+        rows.append(
+            {
+                "bin": b,
+                "n": int(idx.sum()),
+                "mean_pred": float(risk[idx].mean()),
+                "observed": km_risk(time[idx], died[idx], HORIZON),
+            }
+        )
     return pd.DataFrame(rows)
 
 
-def _percentiles(draws: np.ndarray) -> tuple[float, float]:
+def _percentiles(draws: npt.ArrayLike) -> tuple[float, float]:
     """95% percentile interval over the finite draws (NaN draws, e.g. no deaths, are skipped)."""
     draws = np.asarray(draws, dtype=float)
     if not np.isfinite(draws).any():
@@ -96,8 +103,9 @@ def _percentiles(draws: np.ndarray) -> tuple[float, float]:
     return float(lo), float(hi)
 
 
-def bootstrap_ci(metric: Metric, time: np.ndarray, died: np.ndarray, risk: np.ndarray,
-                 n_boot: int = 1000, seed: int = 0) -> tuple[float, float, float]:
+def bootstrap_ci(
+    metric: Metric, time: np.ndarray, died: np.ndarray, risk: np.ndarray, n_boot: int = 1000, seed: int = 0
+) -> tuple[float, float, float]:
     """(point estimate, lower, upper) of a 95% percentile bootstrap CI, resampling people."""
     rng = np.random.default_rng(seed)
     draws = []
@@ -107,9 +115,17 @@ def bootstrap_ci(metric: Metric, time: np.ndarray, died: np.ndarray, risk: np.nd
     return (metric(time, died, risk), *_percentiles(draws))
 
 
-def model_diff_ci(metric: Metric, time: np.ndarray, died: np.ndarray, risk_a: np.ndarray, risk_b: np.ndarray,
-                  n_boot: int = 1000, seed: int = 0) -> tuple[float, float, float]:
+def model_diff_ci(
+    metric: Metric,
+    time: np.ndarray,
+    died: np.ndarray,
+    risk_a: np.ndarray,
+    risk_b: np.ndarray,
+    n_boot: int = 1000,
+    seed: int = 0,
+) -> tuple[float, float, float]:
     """Paired difference metric(a) - metric(b), both models scored on the same resampled people."""
+
     def diff(idx):
         return metric(time[idx], died[idx], risk_a[idx]) - metric(time[idx], died[idx], risk_b[idx])
 

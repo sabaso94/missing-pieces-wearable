@@ -9,7 +9,10 @@ def _confounded(n=20_000, seed=0):
     rng = np.random.default_rng(seed)
     x = rng.normal(size=(n, 3))
     t = (rng.random(n) < expit(1.0 * x[:, 0])).astype(int)
-    risk = lambda tt: expit(-2 + 1.0 * x[:, 0] - 0.8 * tt)
+
+    def risk(tt):
+        return expit(-2 + 1.0 * x[:, 0] - 0.8 * tt)
+
     y = (rng.random(n) < risk(t)).astype(int)
     return y, t, x, float(np.mean(risk(1) - risk(0)))
 
@@ -60,9 +63,10 @@ def test_aipw_risk_can_return_the_propensities():
 
 def test_e_value_of_an_interval_uses_the_bound_nearer_one():
     from nhanes_reliable.causal import e_value_ci
-    assert e_value_ci(0.5, 0.3, 0.8) == e_value(0.8)    # protective: upper bound
+
+    assert e_value_ci(0.5, 0.3, 0.8) == e_value(0.8)  # protective: upper bound
     assert e_value_ci(2.0, 1.25, 3.2) == e_value(1.25)  # harmful: lower bound
-    assert e_value_ci(1.4, 0.65, 3.0) == 1.0            # interval contains 1
+    assert e_value_ci(1.4, 0.65, 3.0) == 1.0  # interval contains 1
 
 
 def test_repeated_cross_fitting_takes_the_median_over_splits():

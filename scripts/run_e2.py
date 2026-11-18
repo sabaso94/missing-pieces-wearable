@@ -13,7 +13,6 @@ Writes results/e2_simulated.csv, e2_diffs.csv, e2_real.csv.
 import argparse
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from nhanes_reliable.crossfit import CONDITIONS, crossfit, load_preds, oof_risk, prepare
@@ -52,18 +51,30 @@ def main() -> None:
         for c in CONDITIONS:
             row = {"approach": a, "condition": c}
             for name, metric in METRICS.items():
-                row[name], row[f"{name}_lo"], row[f"{name}_hi"] = bootstrap_ci(metric, time, died, risk[a, c],
-                                                                              args.n_boot)
+                row[name], row[f"{name}_lo"], row[f"{name}_hi"] = bootstrap_ci(
+                    metric, time, died, risk[a, c], args.n_boot
+                )
             simulated.append(row)
             contrasts = [] if c == "none" else [(f"{a} {c} - {a} none", risk[a, c], risk[a, "none"])]
             if a == "fused":
-                contrasts += [(f"fused - fused_naive ({c})", risk[a, c], risk["fused_naive", c]),
-                              (f"fused - cox_subset ({c})", risk[a, c], risk["cox_subset", c])]
+                contrasts += [
+                    (f"fused - fused_naive ({c})", risk[a, c], risk["fused_naive", c]),
+                    (f"fused - cox_subset ({c})", risk[a, c], risk["cox_subset", c]),
+                ]
             for label, ra, rb in contrasts:
                 for name, metric in METRICS.items():
                     d, lo, hi = model_diff_ci(metric, time, died, ra, rb, args.n_boot)
-                    diffs.append({"contrast": label, "approach": a, "condition": c, "metric": name,
-                                  "diff": d, "lo": lo, "hi": hi})
+                    diffs.append(
+                        {
+                            "contrast": label,
+                            "approach": a,
+                            "condition": c,
+                            "metric": name,
+                            "diff": d,
+                            "lo": lo,
+                            "hi": hi,
+                        }
+                    )
         print("evaluated", a, flush=True)
 
     # Real missingness: the people outside the complete-case set, by what they lack.
@@ -77,9 +88,13 @@ def main() -> None:
     real = []
     for group, members in groups.items():
         people = cohort[members]
-        base = {"group": group, "n": len(people), "deaths": int(people["died"].sum()),
-                "deaths_5y": int(((people["died"] == 1) & (people["time_years"] < 5)).sum()),
-                "mean_age": float(people["age"].mean())}
+        base = {
+            "group": group,
+            "n": len(people),
+            "deaths": int(people["died"].sum()),
+            "deaths_5y": int(((people["died"] == 1) & (people["time_years"] < 5)).sum()),
+            "mean_age": float(people["age"].mean()),
+        }
         if group == "other":
             real.append(base)  # too few people to score
             continue

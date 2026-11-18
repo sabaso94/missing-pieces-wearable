@@ -9,7 +9,8 @@ the spread between splits (Chernozhukov et al., 2018, section 3.4), so the resul
 e_value is the minimum strength of association, on the risk-ratio scale, that an unmeasured confounder would need
 with both exposure and outcome to explain an observed risk ratio away (VanderWeele and Ding, 2017).
 """
-from typing import Callable
+
+from collections.abc import Callable
 
 import numpy as np
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -23,9 +24,16 @@ Z = 1.959963984540054
 def _model(nuisance: str, seed: int):
     if nuisance == "linear":
         return make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000))
-    return HistGradientBoostingClassifier(max_iter=200, learning_rate=0.05, max_leaf_nodes=8, min_samples_leaf=20,
-                                          early_stopping=True, validation_fraction=0.2, n_iter_no_change=10,
-                                          random_state=seed)
+    return HistGradientBoostingClassifier(
+        max_iter=200,
+        learning_rate=0.05,
+        max_leaf_nodes=8,
+        min_samples_leaf=20,
+        early_stopping=True,
+        validation_fraction=0.2,
+        n_iter_no_change=10,
+        random_state=seed,
+    )
 
 
 def _fit_proba(make: Callable, x: np.ndarray, y: np.ndarray, x_test: np.ndarray) -> np.ndarray:
@@ -41,9 +49,16 @@ def _summary(psi1: np.ndarray, psi0: np.ndarray) -> dict:
     se_rd = (psi1 - psi0).std(ddof=1) / np.sqrt(n)
     se_log_rr = ((psi1 - r1) / r1 - (psi0 - r0) / r0).std(ddof=1) / np.sqrt(n)
     rr = r1 / r0
-    return {"risk1": float(r1), "risk0": float(r0), "rd": float(r1 - r0), "rd_low": float(r1 - r0 - Z * se_rd),
-            "rd_high": float(r1 - r0 + Z * se_rd), "rr": float(rr), "rr_low": float(rr * np.exp(-Z * se_log_rr)),
-            "rr_high": float(rr * np.exp(Z * se_log_rr))}
+    return {
+        "risk1": float(r1),
+        "risk0": float(r0),
+        "rd": float(r1 - r0),
+        "rd_low": float(r1 - r0 - Z * se_rd),
+        "rd_high": float(r1 - r0 + Z * se_rd),
+        "rr": float(rr),
+        "rr_low": float(rr * np.exp(-Z * se_log_rr)),
+        "rr_high": float(rr * np.exp(Z * se_log_rr)),
+    }
 
 
 def risk_unadjusted(y: np.ndarray, t: np.ndarray) -> dict:
@@ -56,7 +71,10 @@ def _aipw_once(y, t, x, nuisance, n_folds, seed, clip):
     folds = np.empty(len(y), dtype=int)
     folds[np.random.default_rng(seed).permutation(len(y))] = np.arange(len(y)) % n_folds
     mu1, mu0, e = np.empty(len(y)), np.empty(len(y)), np.empty(len(y))
-    make = lambda: _model(nuisance, seed)
+
+    def make():
+        return _model(nuisance, seed)
+
     for k in range(n_folds):
         test, train = folds == k, folds != k
         mu1[test] = _fit_proba(make, x[train & (t == 1)], y[train & (t == 1)], x[test])
@@ -75,16 +93,31 @@ def _median_over_splits(outs: list[dict]) -> dict:
     log_rr = np.log([o["rr"] for o in outs])
     se_log_rr = np.array([np.log(o["rr_high"] / o["rr_low"]) / (2 * Z) for o in outs])
     rd_m, lrr_m = np.median(rd), np.median(log_rr)
-    se_rd_m = np.median(np.sqrt(se_rd ** 2 + (rd - rd_m) ** 2))
-    se_lrr_m = np.median(np.sqrt(se_log_rr ** 2 + (log_rr - lrr_m) ** 2))
-    return {"risk1": float(np.median([o["risk1"] for o in outs])), "risk0": float(np.median([o["risk0"] for o in outs])),
-            "rd": float(rd_m), "rd_low": float(rd_m - Z * se_rd_m), "rd_high": float(rd_m + Z * se_rd_m),
-            "rr": float(np.exp(lrr_m)), "rr_low": float(np.exp(lrr_m - Z * se_lrr_m)),
-            "rr_high": float(np.exp(lrr_m + Z * se_lrr_m))}
+    se_rd_m = np.median(np.sqrt(se_rd**2 + (rd - rd_m) ** 2))
+    se_lrr_m = np.median(np.sqrt(se_log_rr**2 + (log_rr - lrr_m) ** 2))
+    return {
+        "risk1": float(np.median([o["risk1"] for o in outs])),
+        "risk0": float(np.median([o["risk0"] for o in outs])),
+        "rd": float(rd_m),
+        "rd_low": float(rd_m - Z * se_rd_m),
+        "rd_high": float(rd_m + Z * se_rd_m),
+        "rr": float(np.exp(lrr_m)),
+        "rr_low": float(np.exp(lrr_m - Z * se_lrr_m)),
+        "rr_high": float(np.exp(lrr_m + Z * se_lrr_m)),
+    }
 
 
-def aipw_risk(y: np.ndarray, t: np.ndarray, x: np.ndarray, nuisance: str = "linear", n_folds: int = 5, seed: int = 0,
-              clip: float = 0.01, return_propensity: bool = False, n_splits: int = 1):
+def aipw_risk(
+    y: np.ndarray,
+    t: np.ndarray,
+    x: np.ndarray,
+    nuisance: str = "linear",
+    n_folds: int = 5,
+    seed: int = 0,
+    clip: float = 0.01,
+    return_propensity: bool = False,
+    n_splits: int = 1,
+):
     """Risks under exposure and under none, their difference and ratio with 95% CIs (and, if asked, the
     cross-fitted, clipped propensities of the first split). Split s uses seed + s."""
     runs = [_aipw_once(y, t, x, nuisance, n_folds, seed + s, clip) for s in range(n_splits)]

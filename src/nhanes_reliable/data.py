@@ -16,30 +16,63 @@ BLOCKS: dict[str, list[str]] = {
     "labs": ["hba1c", "total_chol", "hdl", "creatinine", "albumin", "alk_phos", "wbc", "hemoglobin", "rdw"],
     "exam": ["bmi", "waist", "sbp", "dbp", "grip"],
     "questionnaire": [
-        "current_smoker", "former_smoker", "self_rated_health", "education", "income_poverty",
-        "diabetes", "heart_failure", "coronary_disease", "heart_attack", "stroke", "cancer",
+        "current_smoker",
+        "former_smoker",
+        "self_rated_health",
+        "education",
+        "income_poverty",
+        "diabetes",
+        "heart_failure",
+        "coronary_disease",
+        "heart_attack",
+        "stroke",
+        "cancer",
     ],
 }
 REMOVABLE: list[str] = ["wearable", "labs", "exam", "questionnaire"]
 
 # RIDRETH3: 1 Mexican American, 2 other Hispanic, 3 non-Hispanic White, 4 non-Hispanic Black,
 # 6 non-Hispanic Asian, 7 other or multiracial.
-RACE_GROUPS: dict[int, str] = {1: "Hispanic", 2: "Hispanic", 3: "NH White", 4: "NH Black", 6: "NH Asian/other",
-                               7: "NH Asian/other"}
+RACE_GROUPS: dict[int, str] = {
+    1: "Hispanic",
+    2: "Hispanic",
+    3: "NH White",
+    4: "NH Black",
+    6: "NH Asian/other",
+    7: "NH Asian/other",
+}
 
 CYCLES: dict[str, str] = {"G": "2011-12", "H": "2013-14"}
 FILES = ["DEMO", "BMX", "BPX", "MGX", "GHB", "TCHOL", "HDL", "BIOPRO", "CBC", "SMQ", "HUQ", "MCQ", "DIQ"]
-MORTALITY_FILES = {"2011-12": "NHANES_2011_2012_MORT_2019_PUBLIC.dat", "2013-14": "NHANES_2013_2014_MORT_2019_PUBLIC.dat"}
+MORTALITY_FILES = {
+    "2011-12": "NHANES_2011_2012_MORT_2019_PUBLIC.dat",
+    "2013-14": "NHANES_2013_2014_MORT_2019_PUBLIC.dat",
+}
 
 # Lab and exam variables copied as they are (continuous, no special codes).
 DIRECT = {
-    "hba1c": "LBXGH", "total_chol": "LBXTC", "hdl": "LBDHDD", "creatinine": "LBXSCR", "albumin": "LBXSAL",
-    "alk_phos": "LBXSAPSI", "wbc": "LBXWBCSI", "hemoglobin": "LBXHGB", "rdw": "LBXRDW",
-    "bmi": "BMXBMI", "waist": "BMXWAIST", "grip": "MGDCGSZ", "income_poverty": "INDFMPIR",
+    "hba1c": "LBXGH",
+    "total_chol": "LBXTC",
+    "hdl": "LBDHDD",
+    "creatinine": "LBXSCR",
+    "albumin": "LBXSAL",
+    "alk_phos": "LBXSAPSI",
+    "wbc": "LBXWBCSI",
+    "hemoglobin": "LBXHGB",
+    "rdw": "LBXRDW",
+    "bmi": "BMXBMI",
+    "waist": "BMXWAIST",
+    "grip": "MGDCGSZ",
+    "income_poverty": "INDFMPIR",
 }
 # Yes/no questions (1 = yes, 2 = no; 7 = refused and 9 = don't know become missing).
-YES_NO = {"heart_failure": "MCQ160B", "coronary_disease": "MCQ160C", "heart_attack": "MCQ160E", "stroke": "MCQ160F",
-          "cancer": "MCQ220"}
+YES_NO = {
+    "heart_failure": "MCQ160B",
+    "coronary_disease": "MCQ160C",
+    "heart_attack": "MCQ160E",
+    "stroke": "MCQ160F",
+    "cancer": "MCQ220",
+}
 
 
 def _valid_codes(values: pd.Series, allowed: list[int]) -> pd.Series:
@@ -102,8 +135,13 @@ def load_clinical(data_dir: Path) -> pd.DataFrame:
 
 def read_mortality_file(path: Path) -> pd.DataFrame:
     """One NCHS public-use linked mortality file (fixed width; positions from the NCHS read-in program)."""
-    table = pd.read_fwf(path, colspecs=[(0, 6), (14, 15), (15, 16), (45, 48)],
-                        names=["seqn", "eligstat", "mortstat", "months"], na_values=["."], header=None)
+    table = pd.read_fwf(
+        path,
+        colspecs=[(0, 6), (14, 15), (15, 16), (45, 48)],
+        names=["seqn", "eligstat", "mortstat", "months"],
+        na_values=["."],
+        header=None,
+    )
     table = table.set_index(table["seqn"].astype(int).rename("seqn"))
     # ELIGSTAT: 1 eligible, 2 under 18 (not released), 3 ineligible. MORTSTAT: 0 alive, 1 dead.
     return pd.DataFrame({"eligstat": table["eligstat"], "died": table["mortstat"], "months": table["months"]})

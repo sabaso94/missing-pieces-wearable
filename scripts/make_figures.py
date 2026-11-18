@@ -18,23 +18,46 @@ SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#8a5cc7"]
 INK, INK_2, MUTED = "#0b0b0b", "#52514e", "#898781"
 GRID, AXIS, SURFACE = "#e1e0d9", "#c3c2b7", "#fcfcfb"
 CONDITION_LABELS = {
-    "none": "all inputs", "no_wearable": "no wearable", "no_labs": "no labs", "no_exam": "no exam",
-    "no_questionnaire": "no\nquestionnaire", "no_clinic": "no clinic visit\n(labs, exam)",
+    "none": "all inputs",
+    "no_wearable": "no wearable",
+    "no_labs": "no labs",
+    "no_exam": "no exam",
+    "no_questionnaire": "no\nquestionnaire",
+    "no_clinic": "no clinic visit\n(labs, exam)",
     "questionnaire_only": "questionnaire,\nage, sex only",
 }
 APPROACH_LABELS = {
-    "fused": "fusion, modality dropout", "fused_naive": "fusion, no dropout",
-    "cox_subset": "Cox refitted per subset", "cox_impute": "Cox, mean-imputed",
+    "fused": "fusion, modality dropout",
+    "fused_naive": "fusion, no dropout",
+    "cox_subset": "Cox refitted per subset",
+    "cox_impute": "Cox, mean-imputed",
 }
 
-plt.rcParams.update({
-    "figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "savefig.facecolor": SURFACE,
-    "axes.edgecolor": AXIS, "axes.labelcolor": INK_2, "axes.titlecolor": INK, "axes.titlesize": 11,
-    "axes.spines.top": False, "axes.spines.right": False, "axes.grid": True, "grid.color": GRID,
-    "grid.linewidth": 0.6, "xtick.color": MUTED, "ytick.color": MUTED, "xtick.labelcolor": INK_2,
-    "ytick.labelcolor": INK_2, "legend.frameon": False, "legend.labelcolor": INK_2, "font.size": 9.5,
-    "lines.linewidth": 2, "savefig.dpi": 200,
-})
+plt.rcParams.update(
+    {
+        "figure.facecolor": SURFACE,
+        "axes.facecolor": SURFACE,
+        "savefig.facecolor": SURFACE,
+        "axes.edgecolor": AXIS,
+        "axes.labelcolor": INK_2,
+        "axes.titlecolor": INK,
+        "axes.titlesize": 11,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.grid": True,
+        "grid.color": GRID,
+        "grid.linewidth": 0.6,
+        "xtick.color": MUTED,
+        "ytick.color": MUTED,
+        "xtick.labelcolor": INK_2,
+        "ytick.labelcolor": INK_2,
+        "legend.frameon": False,
+        "legend.labelcolor": INK_2,
+        "font.size": 9.5,
+        "lines.linewidth": 2,
+        "savefig.dpi": 200,
+    }
+)
 
 
 def _err(rows: pd.DataFrame, name: str) -> list[pd.Series]:
@@ -63,13 +86,23 @@ def e1_reliability() -> None:
     for k, (model, label) in enumerate([("cox_full", "Cox, all inputs"), ("fused", "fusion model")]):
         rows = table[table["model"] == model]
         citl = overall.loc[model, "citl5"]
-        ax.plot(rows["mean_pred"], rows["observed"], color=SERIES[k], marker="o", markersize=4,
-                label=f"{label} (CITL {citl:+.3f})")
+        ax.plot(
+            rows["mean_pred"],
+            rows["observed"],
+            color=SERIES[k],
+            marker="o",
+            markersize=4,
+            label=f"{label} (CITL {citl:+.3f})",
+        )
         top = max(top, rows["mean_pred"].max(), rows["observed"].max())
     top *= 1.05
     ax.plot([0, top], [0, top], color=AXIS, linewidth=1, linestyle="--")
-    ax.set(xlim=(0, top), ylim=(0, top), xlabel="mean predicted 5-year risk (decile)",
-           ylabel="observed 5-year risk (Kaplan-Meier)")
+    ax.set(
+        xlim=(0, top),
+        ylim=(0, top),
+        xlabel="mean predicted 5-year risk (decile)",
+        ylabel="observed 5-year risk (Kaplan-Meier)",
+    )
     ax.legend(loc="upper left")
     ax.set_title("E1: calibration, complete cases (dashed = perfect)", loc="left")
     _save(fig, "e1_reliability.png")
@@ -85,8 +118,17 @@ def e2_missing() -> None:
         rows = table[table["approach"] == approach].set_index("condition").reindex(conditions)
         offset = (k - 1.5) * 0.17
         for ax, name in [(ax_c, "c_index"), (ax_cal, "citl5")]:
-            ax.errorbar(x + offset, rows[name], yerr=_err(rows, name), fmt="o", color=SERIES[k], markersize=5,
-                        elinewidth=1.5, capsize=0, label=label)
+            ax.errorbar(
+                x + offset,
+                rows[name],
+                yerr=_err(rows, name),
+                fmt="o",
+                color=SERIES[k],
+                markersize=5,
+                elinewidth=1.5,
+                capsize=0,
+                label=label,
+            )
     ax_cal.axhline(0, color=MUTED, linewidth=1, linestyle=":")
     ax_c.set_ylabel("Harrell's C (95% CI)")
     ax_cal.set_ylabel("predicted - observed\n5-year risk (95% CI)")
@@ -107,8 +149,17 @@ def e3_days() -> None:
         rows = table[table["model"] == model].sort_values("days_kept")
         offset = (k - 1) * 0.12
         for ax, name in [(ax_c, "c_index"), (ax_cal, "citl5")]:
-            ax.errorbar(rows["days_kept"] + offset, rows[name], yerr=_err(rows, name), fmt="o-", color=SERIES[k],
-                        markersize=5, elinewidth=1.2, capsize=0, label=label)
+            ax.errorbar(
+                rows["days_kept"] + offset,
+                rows[name],
+                yerr=_err(rows, name),
+                fmt="o-",
+                color=SERIES[k],
+                markersize=5,
+                elinewidth=1.2,
+                capsize=0,
+                label=label,
+            )
     ax_cal.axhline(0, color=MUTED, linewidth=1, linestyle=":")
     n, deaths = int(table["n"].iloc[0]), int(table["deaths_5y"].iloc[0])
     ax_c.set(ylabel="Harrell's C (95% CI)", xlabel="valid wear days kept at test time")
@@ -131,23 +182,41 @@ def e4_e5_calibration() -> None:
         found = list(table[(table["variant"] == "fused") & (table["attribute"] == attribute)]["group"])
         order += [(attribute, g) for g in (groups or sorted(found))]
     y = np.arange(len(order))[::-1]
-    variants = [("fused", "fusion model"), ("fused_recal_global", "+ one recalibration for everyone"),
-                ("group", "+ recalibration per group")]
+    variants = [
+        ("fused", "fusion model"),
+        ("fused_recal_global", "+ one recalibration for everyone"),
+        ("group", "+ recalibration per group"),
+    ]
 
     fig, ax = plt.subplots(figsize=(7.2, 4.6))
     for k, (variant, label) in enumerate(variants):
         xs, lo, hi = [], [], []
         for attribute, group in order:
             name = f"fused_recal_{attribute}" if variant == "group" else variant
-            row = table[(table["variant"] == name) & (table["attribute"] == attribute) &
-                        (table["group"] == group)].iloc[0]
-            xs.append(row["citl5"]), lo.append(row["citl5"] - row["citl5_lo"]), hi.append(row["citl5_hi"] - row["citl5"])
-        ax.errorbar(xs, y + (1 - k) * 0.22, xerr=[lo, hi], fmt="o", color=SERIES[k], markersize=5, elinewidth=1.5,
-                    capsize=0, label=label)
+            row = table[
+                (table["variant"] == name) & (table["attribute"] == attribute) & (table["group"] == group)
+            ].iloc[0]
+            (
+                xs.append(row["citl5"]),
+                lo.append(row["citl5"] - row["citl5_lo"]),
+                hi.append(row["citl5_hi"] - row["citl5"]),
+            )
+        ax.errorbar(
+            xs,
+            y + (1 - k) * 0.22,
+            xerr=[lo, hi],
+            fmt="o",
+            color=SERIES[k],
+            markersize=5,
+            elinewidth=1.5,
+            capsize=0,
+            label=label,
+        )
     n = table[table["variant"] == "fused"].set_index(["attribute", "group"])
     ax.set_yticks(y, [f"{g} (n={n.loc[(a, g), 'n']:,}, {n.loc[(a, g), 'deaths_5y']} deaths in 5 y)" for a, g in order])
-    for boundary in np.cumsum([len(table[(table["variant"] == "fused") & (table["attribute"] == a)])
-                               for a, _ in attributes])[:-1]:
+    for boundary in np.cumsum(
+        [len(table[(table["variant"] == "fused") & (table["attribute"] == a)]) for a, _ in attributes]
+    )[:-1]:
         ax.axhline(len(order) - boundary - 0.5, color=AXIS, linewidth=1)
     ax.axvline(0, color=MUTED, linewidth=1, linestyle=":")
     ax.grid(axis="y", visible=False)
@@ -161,22 +230,37 @@ def e4_e5_calibration() -> None:
 def e6_activity() -> None:
     table = pd.read_csv(RESULTS / "e6_activity.csv")
     analyses = list(pd.unique(table["analysis"]))
-    labels = {"all": "all", "deaths in the first 2 years left out": "deaths in the first 2 years left out\n(outcome: death in years 2-5)",
-              "healthy at baseline": "healthy at baseline"}
-    variants = [("none", "-", 0, "unadjusted"), ("age and sex", "logistic", 1, "age and sex"),
-                ("pre-existing factors", "logistic", 2, "pre-existing factors, logistic"),
-                ("pre-existing factors", "boosted", 2, "pre-existing factors, boosted"),
-                ("all clinical inputs", "logistic", 3, "all clinical inputs, logistic"),
-                ("all clinical inputs", "boosted", 3, "all clinical inputs, boosted")]
+    labels = {
+        "all": "all",
+        "deaths in the first 2 years left out": "deaths in the first 2 years left out\n(outcome: death in years 2-5)",
+        "healthy at baseline": "healthy at baseline",
+    }
+    variants = [
+        ("none", "-", 0, "unadjusted"),
+        ("age and sex", "logistic", 1, "age and sex"),
+        ("pre-existing factors", "logistic", 2, "pre-existing factors, logistic"),
+        ("pre-existing factors", "boosted", 2, "pre-existing factors, boosted"),
+        ("all clinical inputs", "logistic", 3, "all clinical inputs, logistic"),
+        ("all clinical inputs", "boosted", 3, "all clinical inputs, boosted"),
+    ]
     y = np.arange(len(analyses))[::-1]
     fig, ax = plt.subplots(figsize=(7.4, 4.4))
     for k, (adjustment, nuisance, colour, label) in enumerate(variants):
         rows = table[(table["adjustment"] == adjustment) & (table["nuisance"] == nuisance)].set_index("analysis")
         rows = rows.loc[analyses]
         filled = nuisance != "logistic"
-        ax.errorbar(rows["rr"], y + (2.5 - k) * 0.13, xerr=[rows["rr"] - rows["rr_low"], rows["rr_high"] - rows["rr"]],
-                    fmt="o", color=SERIES[colour], markersize=5, elinewidth=1.5, capsize=0, label=label,
-                    markerfacecolor=SERIES[colour] if filled else SURFACE)
+        ax.errorbar(
+            rows["rr"],
+            y + (2.5 - k) * 0.13,
+            xerr=[rows["rr"] - rows["rr_low"], rows["rr_high"] - rows["rr"]],
+            fmt="o",
+            color=SERIES[colour],
+            markersize=5,
+            elinewidth=1.5,
+            capsize=0,
+            label=label,
+            markerfacecolor=SERIES[colour] if filled else SURFACE,
+        )
     n = table.drop_duplicates("analysis").set_index("analysis")
     ax.set_yticks(y, [f"{labels[a]}\n(n={n.loc[a, 'n']:,}, {n.loc[a, 'deaths']} deaths)" for a in analyses])
     ax.set_xscale("log")

@@ -103,8 +103,11 @@ def test_cache_mismatch_rebuilds(tmp_path, monkeypatch):
 
     def fake_build(data_dir, seqn):
         calls.append(seqn.tolist())
-        return DayData(seqn=seqn, x=np.zeros((len(seqn), MAX_DAYS, 2, 1440), np.float32),
-                       day_mask=np.zeros((len(seqn), MAX_DAYS), bool))
+        return DayData(
+            seqn=seqn,
+            x=np.zeros((len(seqn), MAX_DAYS, 2, 1440), np.float32),
+            day_mask=np.zeros((len(seqn), MAX_DAYS), bool),
+        )
 
     monkeypatch.setattr(activity, "_build_days", fake_build)
     load_days(tmp_path)  # no cache: builds

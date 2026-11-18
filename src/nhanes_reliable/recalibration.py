@@ -30,8 +30,7 @@ def apply_recal(risk: np.ndarray, params: np.ndarray) -> np.ndarray:
     return 1 / (1 + np.exp(-(params[0] + params[1] * _logit(risk))))
 
 
-def fit_group_recal(time: np.ndarray, died: np.ndarray, risk: np.ndarray,
-                    groups: np.ndarray) -> dict[str, np.ndarray]:
+def fit_group_recal(time: np.ndarray, died: np.ndarray, risk: np.ndarray, groups: np.ndarray) -> dict[str, np.ndarray]:
     """One recalibration per group (needs the group to be known when the model is used)."""
     groups = np.asarray(groups).astype(str)
     return {g: fit_recal(time[groups == g], died[groups == g], risk[groups == g]) for g in np.unique(groups)}

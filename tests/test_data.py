@@ -21,21 +21,55 @@ DATA = Path(__file__).resolve().parents[1] / "data"
 def raw_row(**overrides) -> dict:
     """One NHANES respondent with plausible raw values; overrides replace single fields."""
     row = {
-        "SEQN": 1, "RIDAGEYR": 50, "RIAGENDR": 2, "RIDRETH3": 3, "INDFMPIR": 2.5, "DMDEDUC2": 4,
-        "BMXBMI": 27.0, "BMXWAIST": 95.0, "BPXSY1": 120, "BPXSY2": 124, "BPXSY3": np.nan, "BPXSY4": np.nan,
-        "BPXDI1": 80, "BPXDI2": 0, "BPXDI3": np.nan, "BPXDI4": np.nan, "MGDCGSZ": 60.0,
-        "LBXGH": 5.6, "LBXTC": 190, "LBDHDD": 50, "LBXSCR": 0.9, "LBXSAL": 4.2, "LBXSAPSI": 70,
-        "LBXWBCSI": 6.5, "LBXHGB": 14.0, "LBXRDW": 13.0,
-        "SMQ020": 1, "SMQ040": 3, "HUQ010": 2, "DIQ010": 2,
-        "MCQ160B": 2, "MCQ160C": 2, "MCQ160E": 2, "MCQ160F": 2, "MCQ220": 2,
+        "SEQN": 1,
+        "RIDAGEYR": 50,
+        "RIAGENDR": 2,
+        "RIDRETH3": 3,
+        "INDFMPIR": 2.5,
+        "DMDEDUC2": 4,
+        "BMXBMI": 27.0,
+        "BMXWAIST": 95.0,
+        "BPXSY1": 120,
+        "BPXSY2": 124,
+        "BPXSY3": np.nan,
+        "BPXSY4": np.nan,
+        "BPXDI1": 80,
+        "BPXDI2": 0,
+        "BPXDI3": np.nan,
+        "BPXDI4": np.nan,
+        "MGDCGSZ": 60.0,
+        "LBXGH": 5.6,
+        "LBXTC": 190,
+        "LBDHDD": 50,
+        "LBXSCR": 0.9,
+        "LBXSAL": 4.2,
+        "LBXSAPSI": 70,
+        "LBXWBCSI": 6.5,
+        "LBXHGB": 14.0,
+        "LBXRDW": 13.0,
+        "SMQ020": 1,
+        "SMQ040": 3,
+        "HUQ010": 2,
+        "DIQ010": 2,
+        "MCQ160B": 2,
+        "MCQ160C": 2,
+        "MCQ160E": 2,
+        "MCQ160F": 2,
+        "MCQ220": 2,
     }
     row.update(overrides)
     return row
 
 
 def test_special_codes_to_nan():
-    raw = pd.DataFrame([raw_row(SEQN=1, SMQ020=7), raw_row(SEQN=2, SMQ020=9, DMDEDUC2=7),
-                        raw_row(SEQN=3, DMDEDUC2=9, HUQ010=9), raw_row(SEQN=4, MCQ220=9, DIQ010=7)])
+    raw = pd.DataFrame(
+        [
+            raw_row(SEQN=1, SMQ020=7),
+            raw_row(SEQN=2, SMQ020=9, DMDEDUC2=7),
+            raw_row(SEQN=3, DMDEDUC2=9, HUQ010=9),
+            raw_row(SEQN=4, MCQ220=9, DIQ010=7),
+        ]
+    )
     clean = clean_clinical(raw, cycle="2011-12")
     assert clean.loc[1, ["current_smoker", "former_smoker"]].isna().all()
     assert clean.loc[2, ["current_smoker", "former_smoker", "education"]].isna().all()
@@ -44,8 +78,9 @@ def test_special_codes_to_nan():
 
 
 def test_derived_variables():
-    raw = pd.DataFrame([raw_row(SEQN=1), raw_row(SEQN=2, SMQ020=2, SMQ040=np.nan, DIQ010=3),
-                        raw_row(SEQN=3, SMQ040=2, RIAGENDR=1)])
+    raw = pd.DataFrame(
+        [raw_row(SEQN=1), raw_row(SEQN=2, SMQ020=2, SMQ040=np.nan, DIQ010=3), raw_row(SEQN=3, SMQ040=2, RIAGENDR=1)]
+    )
     clean = clean_clinical(raw, cycle="2013-14")
     assert clean.loc[1, "former_smoker"] == 1 and clean.loc[1, "current_smoker"] == 0
     assert clean.loc[2, "former_smoker"] == 0 and clean.loc[2, "current_smoker"] == 0  # never smoked
@@ -71,8 +106,10 @@ def cohort_inputs():
     for block in ["labs", "exam", "questionnaire"]:
         for var in BLOCKS[block]:
             clinical[var] = 1.0
-    mortality = pd.DataFrame({"eligstat": [1, 1, 1, 2], "died": [0, 1, 0, 0], "months": [90.0, 30.0, 70.0, np.nan]},
-                             index=pd.Index([1, 2, 3, 4], name="seqn"))
+    mortality = pd.DataFrame(
+        {"eligstat": [1, 1, 1, 2], "died": [0, 1, 0, 0], "months": [90.0, 30.0, 70.0, np.nan]},
+        index=pd.Index([1, 2, 3, 4], name="seqn"),
+    )
     n_valid = pd.Series([7, 3], index=pd.Index([2, 3], name="seqn"))
     return clinical, mortality, n_valid
 

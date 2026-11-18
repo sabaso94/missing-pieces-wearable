@@ -4,6 +4,7 @@ Each valid day is encoded on its own by a shared 1D CNN, and the day embeddings 
 days only. So the model takes any number of days (1-7), and the order of days does not matter.
 """
 
+import itertools
 import math
 
 import torch
@@ -21,12 +22,14 @@ class DayEncoder(nn.Module):
     from day after the convolutions; global average pooling alone would lose that.
     """
 
+    clock: torch.Tensor
+
     def __init__(self, emb_dim: int = 64):
         super().__init__()
         minutes = torch.arange(1440) / 1440 * 2 * math.pi
         self.register_buffer("clock", torch.stack([torch.sin(minutes), torch.cos(minutes)]))
         layers, channels = [], [4, 16, 32, 64, 64]
-        for c_in, c_out in zip(channels[:-1], channels[1:]):
+        for c_in, c_out in itertools.pairwise(channels):
             # Each block halves the time axis: 1440 -> 720 -> 360 -> 180 -> 90 steps.
             layers += [nn.Conv1d(c_in, c_out, kernel_size=7, stride=2, padding=3), nn.BatchNorm1d(c_out), nn.ReLU()]
         self.conv = nn.Sequential(*layers)
@@ -49,11 +52,14 @@ class FusionSurvivalNet(nn.Module):
         head_in = 64 + N_FLAGS + (emb_dim if use_wearable else 0)
         self.head = nn.Sequential(nn.Linear(head_in, 64), nn.ReLU(), nn.Linear(64, n_intervals))
 
-    def forward(self, days: torch.Tensor | None, day_mask: torch.Tensor | None, tab: torch.Tensor,
-                flags: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, days: torch.Tensor | None, day_mask: torch.Tensor | None, tab: torch.Tensor, flags: torch.Tensor
+    ) -> torch.Tensor:
         """days (B, 7, 2, 1440), day_mask (B, 7) bool, tab (B, n_tab), flags (B, 4) -> logits (B, n_intervals)."""
         parts = [self.tab(tab)]
-        if self.use_wearable:
+        if self.days is not None:  # set exactly when use_wearable
+            if days is None or day_mask is None:
+                raise ValueError("a model with the wearable needs days and day_mask")
             # The wearable counts as present only if its flag is on and at least one day is valid.
             present = flags[:, 0] * day_mask.any(dim=1).float()
             flags = torch.cat([present[:, None], flags[:, 1:]], dim=1)

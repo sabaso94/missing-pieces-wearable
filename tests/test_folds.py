@@ -6,9 +6,10 @@ from nhanes_reliable.folds import assign_folds, inner_split
 
 def cohort(n=2000, seed=0):
     rng = np.random.default_rng(seed)
-    return pd.DataFrame({"died": (rng.random(n) < 0.1).astype(int),
-                         "cycle": rng.choice(["2011-12", "2013-14"], n)},
-                        index=pd.Index(np.arange(1000, 1000 + n), name="seqn"))
+    return pd.DataFrame(
+        {"died": (rng.random(n) < 0.1).astype(int), "cycle": rng.choice(["2011-12", "2013-14"], n)},
+        index=pd.Index(np.arange(1000, 1000 + n), name="seqn"),
+    )
 
 
 def test_folds_stratified():

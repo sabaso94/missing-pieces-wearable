@@ -92,5 +92,5 @@ def test_block_flags_removed_forced_off():
 def test_features_clipped_at_five_sd():
     df = frame()
     df.loc[2, "albumin"] = 1e6
-    x, names = make_tab_features(df, fit_tab_stats(df.iloc[3:], ["albumin"]), ["albumin"])
+    x, _names = make_tab_features(df, fit_tab_stats(df.iloc[3:], ["albumin"]), ["albumin"])
     assert x[2, 0] == 5.0 and np.abs(x[:, 0]).max() <= 5.0

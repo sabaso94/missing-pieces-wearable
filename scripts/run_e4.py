@@ -14,8 +14,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from nhanes_reliable.crossfit import load_preds, prepare
-from nhanes_reliable.crossfit import oof_risk
+from nhanes_reliable.crossfit import load_preds, oof_risk, prepare
 from nhanes_reliable.metrics import c_index, citl5
 from nhanes_reliable.subgroups import age_band, gap_ci, subgroup_table
 
@@ -59,10 +58,27 @@ def main() -> None:
             reference = reference_of(attribute, groups)
             for group in sorted(set(groups) - {reference}):
                 for metric_name, metric in [("c_index", c_index), ("citl5", citl5)]:
-                    gap, lo, hi = gap_ci(metric, time, died, risk, (groups == group).to_numpy(),
-                                         (groups == reference).to_numpy(), args.n_boot)
-                    gaps.append({"model": name, "attribute": attribute, "group": group, "versus": reference,
-                                 "metric": metric_name, "gap": gap, "lo": lo, "hi": hi})
+                    gap, lo, hi = gap_ci(
+                        metric,
+                        time,
+                        died,
+                        risk,
+                        (groups == group).to_numpy(),
+                        (groups == reference).to_numpy(),
+                        args.n_boot,
+                    )
+                    gaps.append(
+                        {
+                            "model": name,
+                            "attribute": attribute,
+                            "group": group,
+                            "versus": reference,
+                            "metric": metric_name,
+                            "gap": gap,
+                            "lo": lo,
+                            "hi": hi,
+                        }
+                    )
         print("evaluated", name, flush=True)
 
     table = pd.concat(tables)

@@ -22,23 +22,33 @@ from nhanes_reliable.recalibration import apply_group_recal, apply_recal, fit_gr
 from nhanes_reliable.subgroups import gap_change_ci, gap_ci, subgroup_table
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from run_e4 import REFERENCES, group_labels, reference_of  # noqa: E402
+from run_e4 import REFERENCES, group_labels, reference_of
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
 METRICS = {"c_index": c_index, "brier5": brier5, "citl5": citl5}
 
 
-def recalibrated(cohort: pd.DataFrame, labels: pd.DataFrame,
-                 preds: pd.DataFrame) -> tuple[dict[str, pd.Series], pd.DataFrame]:
+def recalibrated(
+    cohort: pd.DataFrame, labels: pd.DataFrame, preds: pd.DataFrame
+) -> tuple[dict[str, pd.Series], pd.DataFrame]:
     """Out-of-fold risk of every variant, indexed by seqn (complete cases only), and the fitted maps."""
     preds = preds[(preds["condition"] == "none") & preds["seqn"].isin(cohort.index)]
     variants = {name: [] for name in ["fused", "fused_recal_global"] + [f"fused_recal_{a}" for a in REFERENCES]}
     maps = []
 
     def record(fold_id, attribute, group, t, d, params):
-        maps.append({"fold": fold_id, "attribute": attribute, "group": group, "n_hold": len(t),
-                     "deaths_5y_hold": int(((d == 1) & (t < 5)).sum()), "intercept": params[0], "slope": params[1]})
+        maps.append(
+            {
+                "fold": fold_id,
+                "attribute": attribute,
+                "group": group,
+                "n_hold": len(t),
+                "deaths_5y_hold": int(((d == 1) & (t < 5)).sum()),
+                "intercept": params[0],
+                "slope": params[1],
+            }
+        )
 
     for fold_id, fold in preds.groupby("fold"):
         hold = fold[fold["split"] == "hold"].set_index("seqn")
@@ -85,20 +95,31 @@ def main() -> None:
             for group in sorted(set(groups) - {reference}):
                 in_a, in_b = (groups == group).to_numpy(), (groups == reference).to_numpy()
                 gap, lo, hi = gap_ci(citl5, time, died, r, in_a, in_b, args.n_boot)
-                row = {"variant": name, "attribute": attribute, "group": group, "versus": reference,
-                       "metric": "citl5", "gap": gap, "gap_lo": lo, "gap_hi": hi}
+                row = {
+                    "variant": name,
+                    "attribute": attribute,
+                    "group": group,
+                    "versus": reference,
+                    "metric": "citl5",
+                    "gap": gap,
+                    "gap_lo": lo,
+                    "gap_hi": hi,
+                }
                 if name != "fused":
                     row["change"], row["change_lo"], row["change_hi"] = gap_change_ci(
-                        citl5, time, died, r, risk["fused"], in_a, in_b, args.n_boot)
+                        citl5, time, died, r, risk["fused"], in_a, in_b, args.n_boot
+                    )
                 gaps.append(row)
         row = {"variant": name}
         for metric_name, metric in METRICS.items():
             row[metric_name], row[f"{metric_name}_lo"], row[f"{metric_name}_hi"] = bootstrap_ci(
-                metric, time, died, r, args.n_boot)
+                metric, time, died, r, args.n_boot
+            )
             if name != "fused":
                 d, lo, hi = model_diff_ci(metric, time, died, r, risk["fused"], args.n_boot)
-                row.update({f"{metric_name}_vs_fused": d, f"{metric_name}_vs_fused_lo": lo,
-                            f"{metric_name}_vs_fused_hi": hi})
+                row.update(
+                    {f"{metric_name}_vs_fused": d, f"{metric_name}_vs_fused_lo": lo, f"{metric_name}_vs_fused_hi": hi}
+                )
         overall.append(row)
         print("evaluated", name, flush=True)
 

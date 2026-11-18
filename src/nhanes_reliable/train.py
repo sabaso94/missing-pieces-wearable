@@ -2,6 +2,7 @@
 
 import copy
 import random
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,15 +22,35 @@ from .tabular import block_flags, fit_tab_stats, make_tab_features, tab_variable
 # comparator was trained on complete cases only, so a removed block is just zero-filled (indicators stay 0).
 DEEP_MODELS: dict[str, dict] = {
     # All blocks; random blocks and days dropped in training, so one model serves every missing-data case.
-    "fused": {"blocks": ["core", "wearable", "labs", "exam", "questionnaire"], "use_wearable": True,
-              "modality_dropout": True, "day_dropout": True, "removed_indicators": 1.0},
+    "fused": {
+        "blocks": ["core", "wearable", "labs", "exam", "questionnaire"],
+        "use_wearable": True,
+        "modality_dropout": True,
+        "day_dropout": True,
+        "removed_indicators": 1.0,
+    },
     # The same without modality dropout: never sees a block missing on purpose (the naive comparison in E2).
-    "fused_naive": {"blocks": ["core", "wearable", "labs", "exam", "questionnaire"], "use_wearable": True,
-                    "modality_dropout": False, "day_dropout": True, "removed_indicators": 0.0},
-    "deep_wearable": {"blocks": ["core", "wearable"], "use_wearable": True,
-                      "modality_dropout": False, "day_dropout": True, "removed_indicators": 1.0},
-    "deep_clinical": {"blocks": ["core", "labs", "exam", "questionnaire"], "use_wearable": False,
-                      "modality_dropout": True, "day_dropout": False, "removed_indicators": 1.0},
+    "fused_naive": {
+        "blocks": ["core", "wearable", "labs", "exam", "questionnaire"],
+        "use_wearable": True,
+        "modality_dropout": False,
+        "day_dropout": True,
+        "removed_indicators": 0.0,
+    },
+    "deep_wearable": {
+        "blocks": ["core", "wearable"],
+        "use_wearable": True,
+        "modality_dropout": False,
+        "day_dropout": True,
+        "removed_indicators": 1.0,
+    },
+    "deep_clinical": {
+        "blocks": ["core", "labs", "exam", "questionnaire"],
+        "use_wearable": False,
+        "modality_dropout": True,
+        "day_dropout": False,
+        "removed_indicators": 1.0,
+    },
 }
 
 
@@ -49,16 +70,17 @@ class TrainConfig:
 @dataclass
 class FoldInputs:
     """Everything one fold's models need, aligned to the cohort rows. Statistics come from the fit rows."""
-    x: np.ndarray              # (N, 7, 2, 1440) day tensor (shared, not copied)
-    day_mask: np.ndarray       # (N, 7) bool
-    tab: np.ndarray            # (N, F) float32 standardised values + missing indicators
-    tab_blocks: np.ndarray     # (F,) block of each tabular column
+
+    x: np.ndarray  # (N, 7, 2, 1440) day tensor (shared, not copied)
+    day_mask: np.ndarray  # (N, 7) bool
+    tab: np.ndarray  # (N, F) float32 standardised values + missing indicators
+    tab_blocks: np.ndarray  # (F,) block of each tabular column
     tab_indicator: np.ndarray  # (F,) True for missing-indicator columns
-    flags: np.ndarray          # (N, 4) block-present flags (blocks the model does not use are 0)
-    interval: np.ndarray       # (N,) yearly interval of death or censoring
+    flags: np.ndarray  # (N, 4) block-present flags (blocks the model does not use are 0)
+    interval: np.ndarray  # (N,) yearly interval of death or censoring
     died: np.ndarray
     time: np.ndarray
-    mims_mean: float           # log10(1 + MIMS) mean and std over worn minutes of the fit rows
+    mims_mean: float  # log10(1 + MIMS) mean and std over worn minutes of the fit rows
     mims_std: float
     use_wearable: bool
     removed_indicators: float  # value of a removed block's missing indicators (see DEEP_MODELS)
@@ -84,10 +106,19 @@ def build_fold_inputs(cohort: pd.DataFrame, days: DayData, fit_idx: np.ndarray, 
     worn &= days.day_mask[fit_idx][:, :, None]
     values = days.x[fit_idx, :, 0][worn].astype(np.float64)
     return FoldInputs(
-        x=days.x, day_mask=days.day_mask, tab=tab, tab_blocks=tab_blocks, tab_indicator=tab_indicator, flags=flags,
-        interval=discretise(cohort["time_years"].to_numpy()), died=cohort["died"].to_numpy(),
-        time=cohort["time_years"].to_numpy(), mims_mean=float(values.mean()), mims_std=float(values.std()),
-        use_wearable=spec["use_wearable"], removed_indicators=spec["removed_indicators"],
+        x=days.x,
+        day_mask=days.day_mask,
+        tab=tab,
+        tab_blocks=tab_blocks,
+        tab_indicator=tab_indicator,
+        flags=flags,
+        interval=discretise(cohort["time_years"].to_numpy()),
+        died=cohort["died"].to_numpy(),
+        time=cohort["time_years"].to_numpy(),
+        mims_mean=float(values.mean()),
+        mims_std=float(values.std()),
+        use_wearable=spec["use_wearable"],
+        removed_indicators=spec["removed_indicators"],
     )
 
 
@@ -107,11 +138,13 @@ def sample_day_dropout(day_mask: torch.Tensor, generator: torch.Generator) -> to
     return day_mask & (rank < k[:, None]).to(day_mask.device)
 
 
-def apply_flags(tab: torch.Tensor, day_mask: torch.Tensor, flags: torch.Tensor,
-                inputs: FoldInputs) -> tuple[torch.Tensor, torch.Tensor]:
+def apply_flags(
+    tab: torch.Tensor, day_mask: torch.Tensor, flags: torch.Tensor, inputs: FoldInputs
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Blank every block whose flag is 0: values 0, missing indicators set to inputs.removed_indicators."""
-    block_index = torch.tensor([REMOVABLE.index(b) if b in REMOVABLE else -1 for b in inputs.tab_blocks],
-                               device=tab.device)
+    block_index = torch.tensor(
+        [REMOVABLE.index(b) if b in REMOVABLE else -1 for b in inputs.tab_blocks], device=tab.device
+    )
     indicator = torch.from_numpy(inputs.tab_indicator).to(tab.device)
     off = (flags[:, block_index.clamp(min=0)] == 0) & (block_index >= 0)
     tab = torch.where(off & ~indicator, torch.zeros_like(tab), tab)
@@ -146,9 +179,16 @@ def _new_model(inputs: FoldInputs) -> FusionSurvivalNet:
 
 
 @torch.no_grad()
-def predict_risk(models: list[FusionSurvivalNet], inputs: FoldInputs, idx: np.ndarray, removed: list[str] = (),
-                 day_mask: np.ndarray | None = None, years: int = int(HORIZON), device: str = "cuda",
-                 batch_size: int = 512) -> np.ndarray:
+def predict_risk(
+    models: list[FusionSurvivalNet],
+    inputs: FoldInputs,
+    idx: np.ndarray,
+    removed: Sequence[str] = (),
+    day_mask: np.ndarray | None = None,
+    years: int = int(HORIZON),
+    device: str = "cuda",
+    batch_size: int = 512,
+) -> np.ndarray:
     """Ensemble mean of the members' predicted risk of death before `years`, with `removed` blocks blanked."""
     risks = []
     for model in models:
@@ -168,8 +208,9 @@ def predict_risk(models: list[FusionSurvivalNet], inputs: FoldInputs, idx: np.nd
     return np.mean(risks, axis=0)
 
 
-def train_model(cfg: TrainConfig, inputs: FoldInputs, fit_idx: np.ndarray,
-                hold_idx: np.ndarray) -> tuple[FusionSurvivalNet, pd.DataFrame]:
+def train_model(
+    cfg: TrainConfig, inputs: FoldInputs, fit_idx: np.ndarray, hold_idx: np.ndarray
+) -> tuple[FusionSurvivalNet, pd.DataFrame]:
     """AdamW on the logistic-hazard loss; keeps the epoch with the best hold-out C-index (5-year risk)."""
     _seed_everything(cfg.seed)
     spec = DEEP_MODELS[cfg.model]
@@ -190,8 +231,11 @@ def train_model(cfg: TrainConfig, inputs: FoldInputs, fit_idx: np.ndarray,
                 mask = sample_day_dropout(mask, generator)
             tab, mask = apply_flags(tab, mask, flags, inputs)
             logits = model(days, mask, tab, flags)
-            loss = logistic_hazard_loss(logits, torch.from_numpy(inputs.interval[rows]).to(cfg.device),
-                                        torch.from_numpy(inputs.died[rows]).float().to(cfg.device))
+            loss = logistic_hazard_loss(
+                logits,
+                torch.from_numpy(inputs.interval[rows]).to(cfg.device),
+                torch.from_numpy(inputs.died[rows]).float().to(cfg.device),
+            )
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
@@ -205,12 +249,15 @@ def train_model(cfg: TrainConfig, inputs: FoldInputs, fit_idx: np.ndarray,
             since_best += 1
             if since_best >= cfg.patience:
                 break
+    if best_state is None:
+        raise RuntimeError("the validation score never improved: no checkpoint to restore")
     model.load_state_dict(best_state)
     return model.eval(), pd.DataFrame(history)
 
 
-def train_ensemble(cfg: TrainConfig, inputs: FoldInputs, fit_idx: np.ndarray, hold_idx: np.ndarray,
-                   ckpt_dir: Path, seeds=range(5)) -> list[FusionSurvivalNet]:
+def train_ensemble(
+    cfg: TrainConfig, inputs: FoldInputs, fit_idx: np.ndarray, hold_idx: np.ndarray, ckpt_dir: Path, seeds=range(5)
+) -> list[FusionSurvivalNet]:
     """One model per seed; a member whose checkpoint already exists is loaded instead of trained."""
     ckpt_dir = Path(ckpt_dir)
     ckpt_dir.mkdir(parents=True, exist_ok=True)

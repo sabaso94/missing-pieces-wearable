@@ -4,11 +4,13 @@ Among complete cases with a known 5-year status, the most active third (daily ac
 the least active third (the middle third is left out). Risk of death within 5 years if everyone were in the top
 third against everyone in the bottom third, with four adjustment sets: none; age and sex; factors that come before
 the activity level (PRE_EXISTING); and every clinical input of the models, which adds factors that activity
-itself may change (BMI, waist, blood pressure, labs, grip strength, diabetes) and two checks for reverse causation: leaving out deaths in the first 2 years, and keeping only
+itself may change (BMI, waist, blood pressure, labs, grip strength, diabetes) and two checks for reverse causation:
+leaving out deaths in the first 2 years, and keeping only
 people healthy at baseline (self-rated health excellent to good, none of heart failure, coronary disease, heart
 attack, stroke or cancer). Survey weights are not used: the estimates describe this sample.
 Writes results/e6_activity.csv and results/e6_overlap.csv.
 """
+
 import os
 
 for _var in ["OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"]:
@@ -27,8 +29,16 @@ ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
 CONDITIONS = ["heart_failure", "coronary_disease", "heart_attack", "stroke", "cancer"]
 # Factors that precede a person's activity level rather than follow from it: confounders, not pathways.
-PRE_EXISTING = ["age", "female", "current_smoker", "former_smoker", "education", "income_poverty",
-                "self_rated_health", *CONDITIONS]
+PRE_EXISTING = [
+    "age",
+    "female",
+    "current_smoker",
+    "former_smoker",
+    "education",
+    "income_poverty",
+    "self_rated_health",
+    *CONDITIONS,
+]
 N_SPLITS = 10  # cross-fitting repeated over 10 random fold splits; the median is reported
 NUISANCE_LABEL = {"linear": "logistic", "boosting": "boosted"}
 
@@ -43,8 +53,7 @@ def analysis_sets(cohort: pd.DataFrame) -> dict[str, pd.DataFrame]:
     base["exposed"] = (base["act_active_minutes"] >= high).astype(int)
     early = (base["died"] == 1) & (base["time_years"] < 2)
     healthy = (base["self_rated_health"] <= 3) & (base[CONDITIONS] == 0).all(axis=1)  # a missing answer is not "none"
-    return {"all": base, "deaths in the first 2 years left out": base[~early],
-            "healthy at baseline": base[healthy]}
+    return {"all": base, "deaths in the first 2 years left out": base[~early], "healthy at baseline": base[healthy]}
 
 
 def adjustment_sets(df: pd.DataFrame) -> dict[str, np.ndarray]:
@@ -52,9 +61,11 @@ def adjustment_sets(df: pd.DataFrame) -> dict[str, np.ndarray]:
         x, _ = make_tab_features(df, fit_tab_stats(df, variables), variables)
         return x.astype(float)
 
-    return {"age and sex": df[["age", "female"]].to_numpy(float),
-            "pre-existing factors": features(PRE_EXISTING),
-            "all clinical inputs": features(tab_variables(["core", "labs", "exam", "questionnaire"]))}
+    return {
+        "age and sex": df[["age", "female"]].to_numpy(float),
+        "pre-existing factors": features(PRE_EXISTING),
+        "all clinical inputs": features(tab_variables(["core", "labs", "exam", "questionnaire"])),
+    }
 
 
 def main() -> None:
@@ -65,7 +76,7 @@ def main() -> None:
         info = {"analysis": analysis, "n": len(df), "n_top_third": int(t.sum()), "deaths": int(y.sum())}
         rows.append(info | {"adjustment": "none", "nuisance": "-"} | risk_unadjusted(y, t))
         for adjustment, x in adjustment_sets(df).items():
-            for nuisance in (["linear"] if adjustment == "age and sex" else ["linear", "boosting"]):
+            for nuisance in ["linear"] if adjustment == "age and sex" else ["linear", "boosting"]:
                 out, e = aipw_risk(y, t, x, nuisance, return_propensity=True, n_splits=N_SPLITS)
                 label = NUISANCE_LABEL[nuisance]
                 row = info | {"adjustment": adjustment, "nuisance": label} | out

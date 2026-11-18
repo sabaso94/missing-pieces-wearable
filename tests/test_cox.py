@@ -60,6 +60,7 @@ def test_rare_indicators_do_not_break_fit():
         X.loc[rng.choice(alive, 4, replace=False), f"rare{j}"] = 1.0
     model = fit_cox(X, time, died)
     from nhanes_reliable.metrics import c_index
+
     assert c_index(time, died, cox_risk(model, X)) > 0.65
     assert model.fitter.params_.abs().max() < 3
 

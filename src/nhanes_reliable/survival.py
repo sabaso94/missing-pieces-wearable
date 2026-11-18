@@ -4,7 +4,7 @@ Interval j covers follow-up years [j, j+1). A death at exactly 5.0 years is in i
 5 years" means time < 5 everywhere (risk_at, km_risk, the binary 5-year outcome).
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 import torch
