@@ -1,5 +1,7 @@
 # Mortality risk from a wrist wearable and clinical data when parts are missing
 
+[![tests](https://github.com/sabaso94/missing-pieces-wearable/actions/workflows/tests.yml/badge.svg)](https://github.com/sabaso94/missing-pieces-wearable/actions/workflows/tests.yml)
+
 When the wearable or the lab panel is missing, how much does a combined mortality-risk model lose, and is it equally well calibrated across groups?
 
 This repository studies that question on NHANES 2011–2014: one week of minute-level wrist accelerometry, a clinical exam, blood tests and a questionnaire for 10,886 US adults, linked to death records up to the end of 2019. It covers:
@@ -262,7 +264,7 @@ Age and measured health explain most of the crude association. Adjusted for what
 
 ```bash
 python -m venv .venv
-.venv/bin/pip install -U pip "setuptools>=64"
+.venv/bin/pip install -U pip "setuptools>=77"
 .venv/bin/pip install --extra-index-url https://download.pytorch.org/whl/cu118 -r requirements.txt
 .venv/bin/pip install -e .
 bash scripts/run_all.sh
@@ -309,3 +311,7 @@ figures/               the figures above
 - Robins, J. M., Rotnitzky, A., Zhao, L. P. (1994). Estimation of regression coefficients when some regressors are not always observed. *Journal of the American Statistical Association* 89, 846–866.
 - Chernozhukov, V. et al. (2018). Double/debiased machine learning for treatment and structural parameters. *The Econometrics Journal* 21, C1–C68.
 - VanderWeele, T. J., Ding, P. (2017). Sensitivity analysis in observational research: introducing the E-value. *Annals of Internal Medicine* 167(4), 268–274.
+
+## Licence
+
+The code is released under the [MIT licence](LICENSE). The data are not part of this repository; each dataset keeps its own licence and terms of use.
